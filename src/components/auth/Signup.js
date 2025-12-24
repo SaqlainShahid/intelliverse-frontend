@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, User, Mail, Hash, Calendar, Building } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Hash, Calendar, Building, Shield } from 'lucide-react';
 import authService from '../../services/authService';
 import toast from 'react-hot-toast';
 
@@ -19,7 +19,9 @@ const Signup = () => {
       semester: '',
       // Faculty specific fields
       employeeId: '',
-      designation: ''
+      designation: '',
+      // Admin specific fields
+      adminCode: ''
     },
     otpCode: ''
   });
@@ -69,6 +71,15 @@ const Signup = () => {
         ...base,
         employeeId: (profile.employeeId || '').trim(),
         ...(profile.designation ? { designation: profile.designation.trim() } : {})
+      };
+    }
+
+    if (role === 'admin') {
+      return {
+        ...base,
+        employeeId: (profile.employeeId || '').trim(),
+        ...(profile.designation ? { designation: profile.designation.trim() } : {}),
+        adminCode: (profile.adminCode || '').trim()
       };
     }
 
@@ -124,8 +135,18 @@ const Signup = () => {
       return false;
     }
 
-    if (formData.role === 'faculty' && !profile.employeeId) {
-      toast.error('Employee ID is required for faculty');
+    if ((formData.role === 'faculty' || formData.role === 'admin') && !profile.employeeId) {
+      toast.error('Employee ID is required for faculty/admin');
+      return false;
+    }
+
+    if (formData.role === 'admin' && !profile.adminCode) {
+      toast.error('Admin code is required for admin registration');
+      return false;
+    }
+
+    if (formData.role === 'admin' && profile.adminCode !== 'ADMIN001') {
+      toast.error('Invalid admin code');
       return false;
     }
 
@@ -235,7 +256,7 @@ const Signup = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   I am a:
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <button
                     type="button"
                     onClick={() =>
@@ -244,9 +265,10 @@ const Signup = () => {
                         role: 'student',
                         profile: {
                           ...prev.profile,
-                          // clear faculty-only fields on role switch
+                          // clear faculty/admin-only fields on role switch
                           employeeId: '',
-                          designation: ''
+                          designation: '',
+                          adminCode: ''
                         }
                       }))
                     }
@@ -266,9 +288,10 @@ const Signup = () => {
                         role: 'faculty',
                         profile: {
                           ...prev.profile,
-                          // clear student-only fields on role switch
+                          // clear student/admin-only fields on role switch
                           studentId: '',
-                          semester: ''
+                          semester: '',
+                          adminCode: ''
                         }
                       }))
                     }
@@ -279,6 +302,29 @@ const Signup = () => {
                     }`}
                   >
                     Faculty
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData(prev => ({
+                        ...prev,
+                        role: 'admin',
+                        profile: {
+                          ...prev.profile,
+                          // clear student-only fields on role switch
+                          studentId: '',
+                          semester: ''
+                        }
+                      }))
+                    }
+                    className={`p-3 rounded-lg border-2 text-sm font-medium transition ${
+                      formData.role === 'admin'
+                        ? 'border-red-500 bg-red-50 text-red-700'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Shield className="h-4 w-4 inline mr-1" />
+                    Admin
                   </button>
                 </div>
               </div>
@@ -299,7 +345,7 @@ const Signup = () => {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                     placeholder="your.email@university.edu"
                   />
                 </div>
@@ -318,7 +364,7 @@ const Signup = () => {
                     required
                     value={formData.profile.firstName}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                     placeholder="John"
                   />
                 </div>
@@ -333,7 +379,7 @@ const Signup = () => {
                     required
                     value={formData.profile.lastName}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                     placeholder="Doe"
                   />
                 </div>
@@ -354,7 +400,7 @@ const Signup = () => {
                     required
                     value={formData.profile.department}
                     onChange={handleInputChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                   >
                     <option value="">Select Department</option>
                     {departments.map(dept => (
@@ -382,7 +428,7 @@ const Signup = () => {
                         required
                         value={formData.profile.studentId}
                         onChange={handleInputChange}
-                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                         placeholder="221447"
                       />
                     </div>
@@ -400,7 +446,7 @@ const Signup = () => {
                         name="profile.semester"
                         value={formData.profile.semester}
                         onChange={handleInputChange}
-                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                       >
                         <option value="">Select Semester</option>
                         {[1,2,3,4,5,6,7,8].map(sem => (
@@ -410,7 +456,7 @@ const Signup = () => {
                     </div>
                   </div>
                 </div>
-              ) : (
+              ) : formData.role === 'faculty' ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="profile.employeeId" className="block text-sm font-medium text-gray-700">
@@ -427,7 +473,7 @@ const Signup = () => {
                         required
                         value={formData.profile.employeeId}
                         onChange={handleInputChange}
-                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                         placeholder="EMP001"
                       />
                     </div>
@@ -442,9 +488,72 @@ const Signup = () => {
                       type="text"
                       value={formData.profile.designation}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                      className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                       placeholder="Assistant Professor"
                     />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="profile.employeeId" className="block text-sm font-medium text-gray-700">
+                        Employee ID *
+                      </label>
+                      <div className="mt-1 relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Hash className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                          id="profile.employeeId"
+                          name="profile.employeeId"
+                          type="text"
+                          required
+                          value={formData.profile.employeeId}
+                          onChange={handleInputChange}
+                          className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
+                          placeholder="ADMIN001"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="profile.designation" className="block text-sm font-medium text-gray-700">
+                        Designation
+                      </label>
+                      <input
+                        id="profile.designation"
+                        name="profile.designation"
+                        type="text"
+                        value={formData.profile.designation}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
+                        placeholder="System Administrator"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="profile.adminCode" className="block text-sm font-medium text-gray-700">
+                      Admin Code *
+                    </label>
+                    <div className="mt-1 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Shield className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        id="profile.adminCode"
+                        name="profile.adminCode"
+                        type="text"
+                        required
+                        value={formData.profile.adminCode}
+                        onChange={handleInputChange}
+                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
+                        placeholder="Enter admin code"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Contact system administrator for the admin code
+                    </p>
                   </div>
                 </div>
               )}
@@ -463,7 +572,7 @@ const Signup = () => {
                       required
                       value={formData.password}
                       onChange={handleInputChange}
-                      className="block w-full px-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                      className="block w-full px-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                       placeholder="Create a strong password"
                     />
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
@@ -490,7 +599,7 @@ const Signup = () => {
                       required
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
-                      className="block w-full px-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                      className="block w-full px-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                       placeholder="Confirm your password"
                     />
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
@@ -554,7 +663,7 @@ const Signup = () => {
                     required
                     value={formData.otpCode}
                     onChange={handleInputChange}
-                    className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm text-center text-2xl tracking-widest"
+                    className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm text-center text-2xl tracking-widest placeholder-gray-400"
                     placeholder="000000"
                   />
                 </div>

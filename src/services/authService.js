@@ -176,6 +176,24 @@ class AuthService {
       return null;
     }
   }
+
+  async listUsers(params = {}) {
+    try {
+      const response = await api.get('/auth/admin/users', { params });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Failed to load users' };
+    }
+  }
+
+  async getAdminStats() {
+    try {
+      const response = await api.get('/auth/admin/stats');
+      return { success: true, data: response.data };
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Failed to load stats' };
+    }
+  }
 }
 
 export default new AuthService();

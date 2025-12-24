@@ -134,7 +134,7 @@ const Login = () => {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                     placeholder="Enter your university email"
                   />
                 </div>
@@ -156,7 +156,7 @@ const Login = () => {
                     required
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm placeholder-gray-400"
                     placeholder="Enter your password"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
@@ -171,13 +171,14 @@ const Login = () => {
                 </div>
               </div>
 
-              {/* Forgot Password Link - ADDED THIS */}
+              {/* Forgot Password Link */}
               <div className="flex items-center justify-between">
                 <div className="text-sm">
                   <Link 
                     to="/forgot-password" 
-                    className="font-medium text-primary-600 hover:text-primary-500"
+                    className="font-medium text-primary-600 hover:text-primary-500 flex items-center"
                   >
+                    <Eye className="h-4 w-4 mr-1" />
                     Forgot your password?
                   </Link>
                 </div>
@@ -230,7 +231,7 @@ const Login = () => {
                   required
                   value={formData.otpCode}
                   onChange={handleInputChange}
-                  className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm text-center text-2xl tracking-widest"
+                  className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 sm:text-sm text-center text-2xl tracking-widest placeholder-gray-400"
                   placeholder="000000"
                 />
               </div>

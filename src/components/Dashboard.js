@@ -7,279 +7,291 @@ import {
   HelpCircle, 
   Briefcase, 
   Search,
-  Bell,
-  Settings,
-  LogOut,
   Bot,
-  Users
+  Users,
+  Shield,
+  Sparkles,
+  Clock,
+  ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
+import GlassCard from './dashboard-ui/GlassCard';
+import FeatureCard from './dashboard-ui/FeatureCard';
+import StatCard from './dashboard-ui/StatCard';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success('Logged out successfully');
-      navigate('/login');
-    } catch (error) {
-      toast.error('Logout failed');
-    }
-  };
 
   const modules = [
     {
       id: 'chat',
       title: 'Chat',
-      description: 'Connect with peers and faculty',
+      description: 'Connect with peers and faculty instantly.',
       icon: MessageCircle,
-      color: 'bg-blue-500',
+      color: 'text-blue-400',
       path: '/chat',
       available: true
     },
     {
       id: 'events',
       title: 'Events & Clubs',
-      description: 'Discover campus events and activities',
+      description: 'Discover campus happenings.',
       icon: Calendar,
-      color: 'bg-green-500',
+      color: 'text-iv-emerald',
       path: '/events',
       available: true
     },
     {
       id: 'helpdesk',
       title: 'HelpDesk',
-      description: 'Submit and track service requests',
+      description: 'Submit and track service requests.',
       icon: HelpCircle,
-      color: 'bg-orange-500',
+      color: 'text-iv-orange',
       path: '/helpdesk',
-      available: true
-    },
-    {
-      id: 'career',
-      title: 'Career Portal',
-      description: 'AI-powered career guidance',
-      icon: Briefcase,
-      color: 'bg-purple-500',
-      path: '/career',
       available: true
     },
     {
       id: 'lost-found',
       title: 'Lost & Found',
-      description: 'Report lost or found items',
+      description: 'Report lost or found items.',
       icon: Search,
-      color: 'bg-red-500',
+      color: 'text-pink-400',
       path: '/lost-found',
       available: true
     },
     {
       id: 'ai-chat',
-      title: 'AI Assistant',
-      description: 'Get instant answers to your queries',
+      title: 'Cross-Department Communication',
+      description: 'Smart tagging and routing of student queries to departments.',
       icon: Bot,
-      color: 'bg-indigo-500',
-      path: '/ai-chat',
+      color: 'text-iv-indigo',
+      path: '/ask-intelliverse',
       available: true
     }
   ];
 
-  const quickActions = [
-    { title: 'Notifications', icon: Bell, count: 5, path: '/notifications' },
-    { title: 'Settings', icon: Settings, path: '/settings' },
-  ];
+  // Role-based modules
+  if (user?.role === 'student') {
+    modules.push({
+      id: 'career',
+      title: 'Career Portal',
+      description: 'AI-powered career guidance.',
+      icon: Briefcase,
+      color: 'text-purple-400',
+      path: '/career',
+      available: true
+    });
+  } else if (user?.role === 'admin' || user?.role === 'faculty') {
+    modules.push({
+      id: 'career-admin',
+      title: 'Career Management',
+      description: 'Manage internships and jobs.',
+      icon: Briefcase,
+      color: 'text-purple-400',
+      path: '/career/admin',
+      available: true
+    });
+  }
+
+  if (user?.role === 'admin') {
+    modules.unshift({
+      id: 'admin',
+      title: 'Admin Panel',
+      description: 'Manage users and system settings.',
+      icon: Shield,
+      color: 'text-red-400',
+      path: '/admin',
+      available: true,
+      badge: 'Admin'
+    });
+  }
+
+  const handleNavigate = (module) => {
+    if (module.available) {
+      navigate(module.path);
+    } else {
+      toast.info('Coming soon!');
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-primary-600">IntelliVerse</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              {/* Quick Actions */}
-              {quickActions.map((action) => (
-                <button
-                  key={action.title}
-                  onClick={() => navigate(action.path)}
-                  className="relative p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-full transition duration-200"
-                  title={action.title}
-                >
-                  <action.icon className="h-5 w-5" />
-                  {action.count && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {action.count}
-                    </span>
-                  )}
-                </button>
-              ))}
-              
-              {/* User Menu */}
-              <div className="flex items-center space-x-3">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">{user?.profile?.firstName} {user?.profile?.lastName}</p>
-                  <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+    <div className="min-h-screen bg-iv-bg text-iv-text font-sans overflow-x-hidden relative selection:bg-iv-indigo selection:text-white">
+      {/* Ambient Background with Smooth "Running" Animation */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Blob 1: Top-Left to Bottom-Right */}
+        <motion.div 
+          animate={{ 
+            x: [0, 100, 0], 
+            y: [0, 50, 0],
+            scale: [1, 1.2, 1] 
+          }}
+          transition={{ 
+            duration: 20, 
+            repeat: Infinity, 
+            repeatType: "reverse", 
+            ease: "easeInOut" 
+          }}
+          className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-iv-indigo/10 rounded-full blur-[120px]" 
+        />
+        
+        {/* Blob 2: Bottom-Right to Top-Left */}
+        <motion.div 
+          animate={{ 
+            x: [0, -100, 0], 
+            y: [0, -50, 0],
+            scale: [1, 1.3, 1] 
+          }}
+          transition={{ 
+            duration: 25, 
+            repeat: Infinity, 
+            repeatType: "reverse", 
+            ease: "easeInOut" 
+          }}
+          className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-iv-emerald/10 rounded-full blur-[120px]" 
+        />
+
+        {/* Blob 3: Center Pulse & Rotate */}
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.1, 1],
+            rotate: [0, 360],
+          }}
+          transition={{ 
+            duration: 40, 
+            repeat: Infinity, 
+            ease: "linear" 
+          }}
+          className="absolute top-[20%] left-[30%] w-[60%] h-[60%] bg-iv-orange/5 rounded-full blur-[140px]" 
+        />
+        
+        <div className="absolute inset-0 bg-white/40 backdrop-blur-[80px]" />
+      </div>
+
+      <main className="relative z-10 max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        
+        {/* Modern Hero Header Card */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="bg-gradient-to-r from-indigo-50/80 via-purple-50/50 to-white/80 backdrop-blur-xl rounded-[24px] p-8 mb-10 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white/60 relative overflow-hidden group hover:shadow-[0_8px_30px_rgba(99,102,241,0.1)] transition-all duration-500"
+        >
+          {/* Decorative background blobs for the card */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-iv-indigo/5 to-purple-100/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-iv-emerald/5 to-blue-100/20 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
+
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            {/* Left Side Content */}
+            <div className="space-y-6 flex-1">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-iv-text via-iv-indigo to-iv-text tracking-tight">
+                    IntelliVerse
+                  </h1>
                 </div>
-                <div className="h-8 w-8 bg-primary-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {user?.profile?.firstName?.charAt(0)}{user?.profile?.lastName?.charAt(0)}
-                  </span>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-gray-600 hover:text-red-600 hover:bg-gray-100 rounded-full transition duration-200"
-                  title="Logout"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
+                <p className="text-lg text-iv-indigo font-medium flex items-center gap-2">
+                  Smart Campus Companion <Sparkles className="w-4 h-4" />
+                </p>
               </div>
-            </div>
-          </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">
-            Welcome back, {user?.profile?.firstName}! 👋
-          </h2>
-          <p className="mt-2 text-gray-600">
-            Your smart campus companion is ready. What would you like to do today?
-          </p>
-        </div>
-
-        {/* User Info Card */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-          <div className="flex items-center space-x-4">
-            <div className="h-16 w-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-xl font-bold">
-                {user?.profile?.firstName?.charAt(0)}{user?.profile?.lastName?.charAt(0)}
-              </span>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-xl font-semibold text-gray-900">
-                {user?.profile?.firstName} {user?.profile?.lastName}
-              </h3>
-              <p className="text-gray-600 capitalize">{user?.role}</p>
-              <p className="text-sm text-gray-500">{user?.profile?.department}</p>
-              {user?.role === 'student' && user?.profile?.studentId && (
-                <p className="text-sm text-gray-500">ID: {user.profile.studentId}</p>
-              )}
-              {user?.role === 'faculty' && user?.profile?.employeeId && (
-                <p className="text-sm text-gray-500">ID: {user.profile.employeeId}</p>
-              )}
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Last login</p>
-              <p className="text-sm text-gray-900">
-                {user?.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'First time'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Modules Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {modules.map((module) => (
-            <div
-              key={module.id}
-              onClick={() => module.available ? navigate(module.path) : toast.info('Coming soon!')}
-              className={`bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer transform hover:scale-105 ${!module.available ? 'opacity-75' : ''}`}
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`h-12 w-12 ${module.color} rounded-lg flex items-center justify-center`}>
-                    <module.icon className="h-6 w-6 text-white" />
-                  </div>
-                  {!module.available && (
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                      Soon
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {module.title}
-                </h3>
-                <p className="text-gray-600 text-sm">
-                  {module.description}
+              <div>
+                <h2 className="text-2xl font-bold text-iv-text flex items-center gap-2">
+                  Welcome back, {user?.profile?.firstName} <span className="animate-wave inline-block origin-[70%_70%]">👋</span>
+                </h2>
+                <p className="text-iv-muted font-medium mt-1">
+                  Your AI-powered campus assistant is ready. Access your tools below.
                 </p>
               </div>
             </div>
+
+            {/* Right Side Profile Card */}
+            <GlassCard 
+              className="flex items-center p-3 pr-6 rounded-[20px] !bg-white/60 border-white/80 shadow-sm hover:shadow-md transition-shadow cursor-pointer min-w-[200px]"
+              hoverEffect
+            >
+              <div className={`
+                h-12 w-12 rounded-full flex items-center justify-center mr-4 shrink-0 overflow-hidden
+                ${user?.role === 'admin' ? 'bg-gradient-to-br from-red-500 to-red-600' : 'bg-gradient-to-br from-iv-indigo to-purple-600'}
+                shadow-md text-white ring-2 ring-white
+              `}>
+                {user?.profile?.avatar ? (
+                  <img src={user.profile.avatar} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-sm font-bold">
+                    {user?.profile?.firstName?.charAt(0)}{user?.profile?.lastName?.charAt(0)}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base font-bold text-iv-text">
+                  {user?.profile?.firstName}
+                </span>
+                <span className="text-xs font-semibold text-iv-indigo uppercase tracking-wider bg-iv-indigo/10 px-2 py-0.5 rounded-full w-fit mt-0.5">
+                  {user?.role}
+                </span>
+              </div>
+            </GlassCard>
+          </div>
+        </motion.div>
+
+        {/* Primary Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {modules.map((module, index) => (
+            <FeatureCard
+              key={module.id}
+              {...module}
+              onClick={() => handleNavigate(module)}
+              delay={0.4 + (index * 0.1)}
+            />
           ))}
         </div>
 
-        {/* Quick Stats (Role-based) */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="h-5 w-5 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-2xl font-semibold text-gray-900">5</p>
-                <p className="text-gray-600 text-sm">Upcoming Events</p>
-              </div>
-            </div>
+        {/* Insights & Stats Section */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.8 }}
+        >
+          <div className="flex items-center gap-2 mb-6">
+            <Clock className="w-5 h-5 text-iv-indigo" />
+            <h3 className="text-xl font-semibold text-iv-text">Quick Insights</h3>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <HelpCircle className="h-5 w-5 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-2xl font-semibold text-gray-900">2</p>
-                <p className="text-gray-600 text-sm">Pending Tickets</p>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard 
+              label="Upcoming Events" 
+              value="5" 
+              icon={Calendar} 
+              color="text-blue-500"
+              delay={0.9}
+            />
+            <StatCard 
+              label="Pending Tickets" 
+              value="2" 
+              icon={HelpCircle} 
+              color="text-iv-orange"
+              delay={1.0}
+            />
+            <StatCard 
+              label="Active Chats" 
+              value="12" 
+              icon={MessageCircle} 
+              color="text-iv-emerald"
+              delay={1.1}
+            />
+             <StatCard 
+              label="Meetings Today" 
+              value="3" 
+              icon={Users} 
+              color="text-purple-500"
+              delay={1.2}
+            />
           </div>
+        </motion.div>
 
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                <MessageCircle className="h-5 w-5 text-indigo-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-2xl font-semibold text-gray-900">12</p>
-                <p className="text-gray-600 text-sm">Active Chats</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Additional Stats Row */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-2xl font-semibold text-gray-900">3</p>
-                <p className="text-gray-600 text-sm">Meetings Today</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Briefcase className="h-5 w-5 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-2xl font-semibold text-gray-900">7</p>
-                <p className="text-gray-600 text-sm">Career Alerts</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </main>
     </div>
   );

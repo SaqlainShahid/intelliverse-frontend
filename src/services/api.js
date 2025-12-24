@@ -3,9 +3,16 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 // Create axios instance with base configuration
+const rawBase = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const baseURL = (() => {
+  const trimmed = (rawBase || '').replace(/\/$/, '');
+  if (trimmed.endsWith('/api')) return trimmed;
+  return `${trimmed}/api`;
+})();
+
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
-  timeout: 10000,
+  baseURL,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -71,6 +78,8 @@ api.interceptors.response.use(
     // Handle other errors
     if (error.response?.data?.message) {
       toast.error(error.response.data.message);
+    } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      toast.error('Request timed out. Please try again.');
     } else if (error.message === 'Network Error') {
       toast.error('Network error. Please check your connection.');
     } else {

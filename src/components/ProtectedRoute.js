@@ -3,6 +3,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
+import Header from './Header';
 
 const ProtectedRoute = ({ children, roles = [] }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -38,7 +39,12 @@ const ProtectedRoute = ({ children, roles = [] }) => {
     );
   }
 
-  return children;
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      {children}
+    </div>
+  );
 };
 
 export default ProtectedRoute;
