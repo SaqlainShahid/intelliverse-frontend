@@ -5,6 +5,11 @@ const list = async (params = {}) => {
   return data;
 };
 
+const listPending = async (params = {}) => {
+  const { data } = await api.get('/clubs/pending', { params });
+  return data;
+};
+
 const getById = async (id) => {
   const { data } = await api.get(`/clubs/${id}`);
   return data;
@@ -78,4 +83,4 @@ const reject = async (id, reason) => {
   return data;
 };
 
-export default { list, getById, create, update, remove, join, leave, generateQr, resolveByCode, announce, approve, reject };
+export default { list, listPending, getById, create, update, remove, join, leave, generateQr, resolveByCode, announce, approve, reject };

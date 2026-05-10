@@ -2,14 +2,14 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { AnimatePresence } from 'framer-motion';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
 import ForgotPassword from './components/auth/ForgotPassword';
-import Dashboard from './components/Dashboard';
+import RoleDashboard from './components/RoleDashboard';
 import LostAndFoundPage from './pages/LostAndFoundPage';
-import AdminDashboard from './components/admin/AdminDashboard';
 import './index.css';
 import EventsPage from './pages/EventsPage';
 import EventFormPage from './pages/EventFormPage';
@@ -22,12 +22,21 @@ import CareerAdmin from './modules/career/CareerAdmin';
 import AskIntelliVerse from './modules/aiChat/AskIntelliVerse';
 import DepartmentDashboard from './modules/aiChat/DepartmentDashboard';
 import ChatPage from './modules/p2pChat/ChatPage';
+import ChatRequests from './modules/p2pChat/ChatRequests';
 import UserProfileView from './pages/UserProfileView';
 import GroupPage from './pages/GroupPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import ClassroomHub from './modules/classroom/ClassroomHub';
+import EventClubManagerManagement from './dashboards/admin/EventClubManagerManagement';
+import ForumPage from './modules/forum/ForumPage';
+import ForumThread from './modules/forum/ForumThread';
+import CrossDeptPage from './modules/crossDept/CrossDeptPage';
 import { useAuth } from './contexts/AuthContext';
-import { Home, Calendar, Users as UsersIcon, LifeBuoy, MessageSquare, Cog, Landmark, Briefcase, Sparkles, Bot } from 'lucide-react';
+import logo from './logo-intelliverse-transparent.png.png';
+import { Home, Calendar, LifeBuoy, MessageSquare, Cog, Briefcase, Sparkles, Bot, HelpCircle, ShieldCheck, Network } from 'lucide-react';
+import AuthModal from './components/auth/AuthModal';
+import { getTheme } from './styles/theme';
 
 // Placeholder components for other modules
 const ComingSoon = ({ title }) => (
@@ -45,16 +54,51 @@ const AuthLauncher = () => {
   const hideOn = ['/login','/signup','/forgot-password'];
   if (!user) return null;
   if (hideOn.includes(location.pathname)) return null;
+  if (location.pathname.startsWith('/chat')) return null;
   return <ChatWidget />;
 };
 
 function AppShell() {
   const location = useLocation();
-  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(window.innerWidth < 1024);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
   const hideOn = ['/login','/signup','/forgot-password'];
   const showSidebar = !hideOn.includes(location.pathname);
   const { user } = useAuth() || {};
+  const theme = getTheme(user?.role);
+  const isHod = user?.role === 'hod';
+
+  // Returns className string for sidebar NavLinks — HOD gets black/white style
+  const navCls = (isActive, collapsed = false) => {
+    const base = `flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${collapsed ? 'justify-center' : ''}`;
+    if (isHod) {
+      return `${base} ${isActive
+        ? 'bg-slate-900 text-white font-bold shadow-lg'
+        : 'text-slate-500 hover:bg-slate-900 hover:text-white'}`;
+    }
+    if (user?.role === 'admin') {
+      return `${base} ${isActive
+        ? 'bg-rose-50 text-rose-600 font-bold shadow-sm'
+        : 'text-iv-muted hover:bg-gray-50 hover:text-iv-text'}`;
+    }
+    return `${base} ${isActive
+      ? 'bg-indigo-50 text-indigo-600 font-bold shadow-sm'
+      : 'text-iv-muted hover:bg-gray-50 hover:text-iv-text'}`;
+  };
   const shouldShowSidebar = showSidebar && !!user;
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setNavCollapsed(true);
+      } else {
+        setNavCollapsed(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   React.useEffect(() => {
     if (user?.preferences?.darkMode) {
@@ -66,13 +110,15 @@ function AppShell() {
 
   React.useEffect(() => {
     window.__APP_TOGGLE_SIDEBAR = () => setNavCollapsed((v) => !v);
+    window.__OPEN_AUTH_MODAL = (m = 'login') => { setAuthMode(m); setAuthOpen(true); };
     return () => {
       delete window.__APP_TOGGLE_SIDEBAR;
+      delete window.__OPEN_AUTH_MODAL;
     };
   }, []);
 
   return (
-    <div className="App min-h-screen bg-iv-bg">
+    <div className="App min-h-screen bg-white overflow-x-hidden">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -86,19 +132,21 @@ function AppShell() {
       <div className="flex min-h-screen">
         {shouldShowSidebar && (
           <aside
-            className={`fixed inset-y-0 left-0 z-40 bg-white/80 backdrop-blur-2xl border-r border-white/60 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-300 ease-in-out ${
-              navCollapsed ? 'w-20' : 'w-72'
+            className={`fixed inset-y-0 left-0 z-[1000] bg-white/80 backdrop-blur-2xl border-r border-white/60 shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-all duration-300 ease-in-out ${
+              navCollapsed 
+                ? '-translate-x-full lg:translate-x-0 lg:w-20' 
+                : 'translate-x-0 w-72'
             }`}
           >
             <div className="flex flex-col h-full">
               {/* Sidebar Header */}
               <div className={`flex items-center h-20 px-6 border-b border-gray-100/50 ${navCollapsed ? 'justify-center' : ''}`}>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-iv-indigo/10 rounded-xl shrink-0">
-                    <Sparkles className="w-6 h-6 text-iv-indigo" />
+                  <div className={`p-1 rounded-xl shrink-0`}>
+                    <img src={logo} alt="Intelliverse" className="w-10 h-10 object-contain" />
                   </div>
                   {!navCollapsed && (
-                    <div className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-iv-text via-iv-indigo to-iv-text tracking-tight whitespace-nowrap overflow-hidden">
+                    <div className={`font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r tracking-tight whitespace-nowrap overflow-hidden bg-gradient-to-r ${theme.gradient}`}>
                       IntelliVerse
                     </div>
                   )}
@@ -114,22 +162,17 @@ function AppShell() {
                 )}
                 
                 {[
-                  { to: "/dashboard", icon: Home, label: "Dashboard" },
-                  { to: "/events", icon: Calendar, label: "Events & Clubs" },
-                  { to: "/lost-found", icon: LifeBuoy, label: "Lost & Found" },
-                  { to: "/helpdesk", icon: MessageSquare, label: "Helpdesk" },
-                  { to: "/chat", icon: UsersIcon, label: "Chats" }
+                  { to: "/dashboard",   icon: Home,         label: "Dashboard" },
+                  { to: "/events",      icon: Calendar,     label: "Events & Clubs" },
+                  { to: "/lost-found",  icon: LifeBuoy,     label: "Lost & Found" },
+                  { to: "/helpdesk",    icon: HelpCircle,   label: "Helpdesk" },
+                  { to: "/chat",        icon: MessageSquare,label: "Chats" },
+                  { to: "/cross-dept",  icon: Network,      label: "Cross-Dept" },
                 ].map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${
-                        isActive
-                          ? 'bg-iv-indigo/10 text-iv-indigo font-medium shadow-sm'
-                          : 'text-iv-muted hover:bg-gray-50 hover:text-iv-text'
-                      } ${navCollapsed ? 'justify-center' : ''}`
-                    }
+                    className={({ isActive }) => navCls(isActive, navCollapsed)}
                     title={navCollapsed ? item.label : ""}
                   >
                     <item.icon className={`w-5 h-5 shrink-0 ${navCollapsed ? 'w-6 h-6' : ''}`} />
@@ -138,7 +181,7 @@ function AppShell() {
                 ))}
 
                 {/* Role Based Section */}
-                {(user?.role === 'student' || user?.role === 'admin' || user?.role === 'faculty') && (
+                {(user?.role === 'student' || user?.role === 'admin' || user?.role === 'faculty' || user?.role === 'hod') && (
                   <>
                     {!navCollapsed && (
                       <div className="px-2 mt-6 mb-2 text-xs font-semibold text-iv-muted uppercase tracking-wider animate-fade-in">
@@ -147,38 +190,34 @@ function AppShell() {
                     )}
                     
                     {user.role === 'student' && (
-                      <NavLink to="/career" className={({isActive}) => `flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${isActive ? 'bg-iv-indigo/10 text-iv-indigo font-medium shadow-sm' : 'text-iv-muted hover:bg-gray-50 hover:text-iv-text'} ${navCollapsed ? 'justify-center' : ''}`} title={navCollapsed ? "Career Portal" : ""}>
+                      <NavLink to="/career" className={({isActive}) => navCls(isActive, navCollapsed)} title={navCollapsed ? "Career Portal" : ""}>
                         <Briefcase className={`w-5 h-5 shrink-0 ${navCollapsed ? 'w-6 h-6' : ''}`} />
                         {!navCollapsed && <span className="whitespace-nowrap overflow-hidden">Career Portal</span>}
                       </NavLink>
                     )}
-                    
-                    {(user.role === 'admin' || user.role === 'faculty') && (
-                      <NavLink to="/career/admin" className={({isActive}) => `flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${isActive ? 'bg-iv-indigo/10 text-iv-indigo font-medium shadow-sm' : 'text-iv-muted hover:bg-gray-50 hover:text-iv-text'} ${navCollapsed ? 'justify-center' : ''}`} title={navCollapsed ? "Career Management" : ""}>
+
+                    {(user.role === 'admin' || user.role === 'faculty' || user.role === 'hod') && (
+                      <NavLink to="/career/admin" className={({isActive}) => navCls(isActive, navCollapsed)} title={navCollapsed ? "Career Management" : ""}>
                         <Briefcase className={`w-5 h-5 shrink-0 ${navCollapsed ? 'w-6 h-6' : ''}`} />
                         {!navCollapsed && <span className="whitespace-nowrap overflow-hidden">Career Management</span>}
                       </NavLink>
                     )}
+
+                    {user.role === 'hod' && (
+                      <NavLink to="/management" className={({isActive}) => navCls(isActive, navCollapsed)} title={navCollapsed ? "Management" : ""}>
+                        <ShieldCheck className={`w-5 h-5 shrink-0 ${navCollapsed ? 'w-6 h-6' : ''}`} />
+                        {!navCollapsed && <span className="whitespace-nowrap overflow-hidden">Management</span>}
+                      </NavLink>
+                    )}
                     
-                    {(user.role === 'admin' || user.role === 'faculty') && (
-                      <NavLink to="/department-queries" className={({isActive}) => `flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${isActive ? 'bg-iv-indigo/10 text-iv-indigo font-medium shadow-sm' : 'text-iv-muted hover:bg-gray-50 hover:text-iv-text'} ${navCollapsed ? 'justify-center' : ''}`} title={navCollapsed ? "Dept. Queries" : ""}>
+                    {(user.role === 'admin' || user.role === 'faculty' || user.role === 'hod') && (
+                      <NavLink to="/department-queries" className={({isActive}) => navCls(isActive, navCollapsed)} title={navCollapsed ? "Dept. Queries" : ""}>
                         <Bot className={`w-5 h-5 shrink-0 ${navCollapsed ? 'w-6 h-6' : ''}`} />
                         {!navCollapsed && <span className="whitespace-nowrap overflow-hidden">Dept. Queries</span>}
                       </NavLink>
                     )}
                   </>
                 )}
-
-                {!navCollapsed && (
-                  <div className="px-2 mt-6 mb-2 text-xs font-semibold text-iv-muted uppercase tracking-wider animate-fade-in">
-                    System
-                  </div>
-                )}
-                
-                <NavLink to="/settings" className={({isActive}) => `flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${isActive ? 'bg-iv-indigo/10 text-iv-indigo font-medium shadow-sm' : 'text-iv-muted hover:bg-gray-50 hover:text-iv-text'} ${navCollapsed ? 'justify-center' : ''}`} title={navCollapsed ? "Settings" : ""}>
-                  <Cog className={`w-5 h-5 shrink-0 ${navCollapsed ? 'w-6 h-6' : ''}`} />
-                  {!navCollapsed && <span className="whitespace-nowrap overflow-hidden">Settings</span>}
-                </NavLink>
               </nav>
 
               {/* User Profile Mini (Collapsed Mode) */}
@@ -197,19 +236,20 @@ function AppShell() {
           </aside>
         )}
 
-        <main className={`flex-1 transition-all duration-300 ease-in-out ${shouldShowSidebar ? (navCollapsed ? 'ml-20' : 'ml-72') : ''}`}>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
+        <main className={`transition-all duration-300 ease-in-out bg-white min-h-screen overflow-y-auto ${shouldShowSidebar ? (navCollapsed ? 'ml-0 lg:ml-20 w-full lg:w-[calc(100%-5rem)]' : 'ml-0 lg:ml-72 w-full lg:w-[calc(100%-18rem)]') : 'w-full'}`} style={{ backgroundColor: '#ffffff' }}>
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              {/* Public Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* Protected Routes */}
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <RoleDashboard />
                 </ProtectedRoute>
               }
             />
@@ -229,7 +269,18 @@ function AppShell() {
               path="/admin"
               element={
                 <ProtectedRoute roles={['admin']}>
-                  <AdminDashboard />
+                  <RoleDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/management"
+              element={
+                <ProtectedRoute roles={['admin', 'hod']}>
+                  <div className="p-8">
+                    <EventClubManagerManagement />
+                  </div>
                 </ProtectedRoute>
               }
             />
@@ -246,15 +297,39 @@ function AppShell() {
             <Route
               path="/department-queries"
               element={
-                <ProtectedRoute roles={['admin', 'faculty']}>
+                <ProtectedRoute roles={['admin', 'faculty', 'hod']}>
                   <DepartmentDashboard />
                 </ProtectedRoute>
               }
             />
 
-            {/* Other Modules (Coming Soon placeholders) */}
+            {/* Chat Routes */}
             <Route
               path="/chat"
+              element={
+                <ProtectedRoute>
+                  <ChatPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat/user/:userId"
+              element={
+                <ProtectedRoute>
+                  <ChatPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat/requests"
+              element={
+                <ProtectedRoute>
+                  <ChatRequests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat/:chatId"
               element={
                 <ProtectedRoute>
                   <ChatPage />
@@ -320,7 +395,7 @@ function AppShell() {
             <Route
               path="/career/admin"
               element={
-                <ProtectedRoute roles={['admin','faculty']}>
+                <ProtectedRoute roles={['admin', 'faculty', 'hod']}>
                   <CareerAdmin />
                 </ProtectedRoute>
               }
@@ -366,14 +441,6 @@ function AppShell() {
               }
             />
             <Route
-              path="/chat/:chatId"
-              element={
-                <ProtectedRoute>
-                  <ChatPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/groups/:groupId"
               element={
                 <ProtectedRoute>
@@ -389,13 +456,51 @@ function AppShell() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/classroom/:classId"
+              element={
+                <ProtectedRoute>
+                  <ClassroomHub />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Cross-Departmental Hub */}
+            <Route
+              path="/cross-dept"
+              element={
+                <ProtectedRoute>
+                  <CrossDeptPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Forum */}
+            <Route
+              path="/forum"
+              element={
+                <ProtectedRoute>
+                  <ForumPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/forum/:id"
+              element={
+                <ProtectedRoute>
+                  <ForumThread />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Redirects */}
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
+          </AnimatePresence>
           <AuthLauncher />
         </main>
+        <AuthModal open={authOpen} mode={authMode} onClose={() => setAuthOpen(false)} />
       </div>
     </div>
   );

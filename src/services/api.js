@@ -4,11 +4,37 @@ import toast from 'react-hot-toast';
 
 // Create axios instance with base configuration
 const rawBase = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-const baseURL = (() => {
-  const trimmed = (rawBase || '').replace(/\/$/, '');
+
+// Normalize environment URL values to avoid malformed bases like ":5000"
+const normalizeBase = (raw) => {
+  if (!raw) return 'http://localhost:5000/api';
+
+  let trimmed = String(raw).trim().replace(/\/$/, '');
+
+  // If value is like ":5000" -> assume localhost
+  if (/^:\d+$/.test(trimmed)) {
+    trimmed = `http://localhost${trimmed}`;
+  }
+
+  // If host:port without protocol (e.g. "localhost:5000") -> add http://
+  if (/^[^/:]+:\d+$/.test(trimmed) && !/^https?:\/\//i.test(trimmed)) {
+    trimmed = `http://${trimmed}`;
+  }
+
+  // If missing protocol but starts with a hostname, add http://
+  if (!/^https?:\/\//i.test(trimmed) && !/^\/\//.test(trimmed)) {
+    if (trimmed.startsWith('/')) {
+      trimmed = `http://localhost:5000${trimmed}`;
+    } else if (!trimmed.includes('://')) {
+      trimmed = `http://${trimmed}`;
+    }
+  }
+
   if (trimmed.endsWith('/api')) return trimmed;
   return `${trimmed}/api`;
-})();
+};
+
+const baseURL = normalizeBase(rawBase);
 
 const api = axios.create({
   baseURL,

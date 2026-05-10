@@ -17,13 +17,15 @@ import {
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import GlassCard from './dashboard-ui/GlassCard';
-import FeatureCard from './dashboard-ui/FeatureCard';
-import StatCard from './dashboard-ui/StatCard';
+import { GlassCard, FeatureCard, StatCard } from '../dashboards/shared';
+import eventsService from '../services/eventsService';
+import helpdeskService from '../services/helpdeskService';
+import { getChats } from '../services/chatService';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [insights, setInsights] = React.useState([]);
 
   const modules = [
     {
@@ -108,6 +110,36 @@ const Dashboard = () => {
       badge: 'Admin'
     });
   }
+
+  React.useEffect(() => {
+    const load = async () => {
+      const next = [];
+      try {
+        const evRes = await eventsService.list({ status: 'upcoming', sortBy: 'date', limit: 200 });
+        const evs = evRes?.data || [];
+        const upcomingCount = evs.length;
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const meetingsToday = evs.filter((e) => {
+          try { return new Date(e.date).toISOString().slice(0, 10) === todayStr; } catch { return false; }
+        }).length;
+        if (upcomingCount > 0) next.push({ label: 'Upcoming Events', value: String(upcomingCount), icon: Calendar, color: 'text-blue-500', delay: 0.9 });
+        if (meetingsToday > 0) next.push({ label: 'Meetings Today', value: String(meetingsToday), icon: Users, color: 'text-purple-500', delay: 1.0 });
+      } catch {}
+      try {
+        const tRes = await helpdeskService.getAllTickets({ status: 'open', limit: 1 });
+        const pending = tRes?.data?.pagination?.totalTickets || (tRes?.data?.tickets || []).length || 0;
+        if (pending > 0) next.push({ label: 'Pending Tickets', value: String(pending), icon: HelpCircle, color: 'text-iv-orange', delay: 1.1 });
+      } catch {}
+      try {
+        const cRes = await getChats();
+        const chats = cRes?.data || [];
+        const active = chats.length;
+        if (active > 0) next.push({ label: 'Active Chats', value: String(active), icon: MessageCircle, color: 'text-iv-emerald', delay: 1.2 });
+      } catch {}
+      setInsights(next);
+    };
+    load();
+  }, [user?._id]);
 
   const handleNavigate = (module) => {
     if (module.available) {
@@ -261,34 +293,9 @@ const Dashboard = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard 
-              label="Upcoming Events" 
-              value="5" 
-              icon={Calendar} 
-              color="text-blue-500"
-              delay={0.9}
-            />
-            <StatCard 
-              label="Pending Tickets" 
-              value="2" 
-              icon={HelpCircle} 
-              color="text-iv-orange"
-              delay={1.0}
-            />
-            <StatCard 
-              label="Active Chats" 
-              value="12" 
-              icon={MessageCircle} 
-              color="text-iv-emerald"
-              delay={1.1}
-            />
-             <StatCard 
-              label="Meetings Today" 
-              value="3" 
-              icon={Users} 
-              color="text-purple-500"
-              delay={1.2}
-            />
+            {insights.map((s, i) => (
+              <StatCard key={`${s.label}-${i}`} label={s.label} value={s.value} icon={s.icon} color={s.color} delay={s.delay} />
+            ))}
           </div>
         </motion.div>
 

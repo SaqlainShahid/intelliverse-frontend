@@ -27,6 +27,15 @@ const TicketOverviewPage = () => {
 
   React.useEffect(() => { loadTicket(); }, [loadTicket]);
 
+  React.useEffect(() => {
+    if (!loading && ticket && user?.role === 'faculty') {
+      const dept = (user?.profile?.department || '').toLowerCase();
+      if ((ticket?.department || '').toLowerCase() !== dept) {
+        navigate('/helpdesk');
+      }
+    }
+  }, [loading, ticket, user, navigate]);
+
   const onUpdate = async (id, updateData) => {
     const res = await helpdeskService.updateTicket(id, updateData);
     setTicket(res?.data || res);

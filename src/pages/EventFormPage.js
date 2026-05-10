@@ -14,6 +14,7 @@ const defaultForm = {
   category: 'Technology',
   maxAttendees: 50,
   tags: '',
+  organizer: ''
 };
 
 const EventFormPage = () => {
@@ -50,7 +51,8 @@ const EventFormPage = () => {
             location: evt.location || '',
             category: evt.category || 'Technology',
             maxAttendees: evt.maxAttendees || 50,
-            tags: (evt.tags || []).join(',')
+            tags: (evt.tags || []).join(','),
+            organizer: (evt.organizer && (evt.organizer._id || evt.organizer)) || ''
           });
         }
       } finally {
@@ -59,6 +61,16 @@ const EventFormPage = () => {
     };
     load();
   }, [id, isEdit, user, navigate]);
+
+  useEffect(() => {
+    const loadClubs = async () => {
+      try {
+        const res = await clubsService.list({ limit: 200 });
+        setClubs(res.data || []);
+      } catch {}
+    };
+    loadClubs();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -78,7 +90,11 @@ const EventFormPage = () => {
           .filter(Boolean)
       };
       if (imageFile) payload.image = imageFile;
-      // Organizer removed; no validation
+      if (!payload.organizer) {
+        setError('Club is required');
+        setLoading(false);
+        return;
+      }
       if (isEdit) {
         await eventsService.update(id, payload);
       } else {
@@ -140,7 +156,15 @@ const EventFormPage = () => {
               <input type="number" min={1} name="maxAttendees" value={form.maxAttendees} onChange={handleChange} className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white/50 text-sm focus:ring-iv-indigo/30 focus:border-iv-indigo focus:outline-none" required />
             </div>
           </div>
-          {/* Organizer removed */}
+          <div>
+            <label className="block text-xs text-iv-muted mb-1">Club</label>
+            <select name="organizer" value={form.organizer} onChange={handleChange} className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white/50 text-sm focus:ring-iv-indigo/30 focus:border-iv-indigo focus:outline-none" required>
+              <option value="">Select club</option>
+              {clubs.map((c) => (
+                <option key={c._id} value={c._id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="block text-xs text-iv-muted mb-1">Tags (comma separated)</label>
             <input name="tags" value={form.tags} onChange={handleChange} className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white/50 text-sm focus:ring-iv-indigo/30 focus:border-iv-indigo focus:outline-none" />

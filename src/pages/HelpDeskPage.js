@@ -58,23 +58,27 @@ const HelpDeskPage = () => {
       const items = ticketsResponse.data.tickets || [];
       setTickets(items);
       setPagination(ticketsResponse.data.pagination || { currentPage: 1, totalPages: 1, hasNext: false, hasPrev: false });
-      if (user?.role === 'admin' || user?.role === 'faculty') {
+      if (user?.role === 'admin') {
         const statsResponse = await helpdeskService.getDashboardStats();
         setStats(statsResponse);
       } else {
+        const dept = (user?.profile?.department || '').toLowerCase();
+        const scopedItems = (user?.role === 'faculty' || user?.role === 'hod')
+          ? items.filter(t => (t.department || '').toLowerCase() === dept)
+          : items;
         const now = new Date();
-        const resolvedItems = items.filter(t => ['resolved', 'closed'].includes(t.status) && t.resolvedAt);
+        const resolvedItems = scopedItems.filter(t => ['resolved', 'closed'].includes(t.status) && t.resolvedAt);
         const avgDays = resolvedItems.length
           ? Math.round(resolvedItems.reduce((sum, t) => sum + Math.max(0, (new Date(t.resolvedAt) - new Date(t.createdAt)) / (1000 * 60 * 60 * 24)), 0) / resolvedItems.length)
           : 0;
         setStats({
-          total: items.length,
-          open: items.filter(t => t.status === 'open').length,
-          inProgress: items.filter(t => t.status === 'in_progress').length,
-          resolved: items.filter(t => t.status === 'resolved').length,
-          closed: items.filter(t => t.status === 'closed').length,
-          urgent: items.filter(t => t.priority === 'urgent').length,
-          overdue: items.filter(t => t.dueDate && new Date(t.dueDate) < now && !['resolved','closed'].includes(t.status)).length,
+          total: scopedItems.length,
+          open: scopedItems.filter(t => t.status === 'open').length,
+          inProgress: scopedItems.filter(t => t.status === 'in_progress').length,
+          resolved: scopedItems.filter(t => t.status === 'resolved').length,
+          closed: scopedItems.filter(t => t.status === 'closed').length,
+          urgent: scopedItems.filter(t => t.priority === 'urgent').length,
+          overdue: scopedItems.filter(t => t.dueDate && new Date(t.dueDate) < now && !['resolved','closed'].includes(t.status)).length,
           avgResolutionTime: avgDays
         });
       }
@@ -91,12 +95,15 @@ const HelpDeskPage = () => {
   }, [filters]);
 
   useEffect(() => {
-    if (user?.role === 'faculty' && activeTab === 'manage') {
-      setFilters(prev => ({ ...prev, department: user?.profile?.department || '' }));
-    } else if (activeTab !== 'manage') {
-      setFilters(prev => ({ ...prev, department: '' }));
+    if (user?.role === 'faculty' || user?.role === 'hod') {
+      setFilters(prev => {
+        const dept = user?.profile?.department || '';
+        return prev.department === dept ? prev : { ...prev, department: dept };
+      });
+    } else if (user && user.role !== 'faculty' && user.role !== 'hod') {
+      setFilters(prev => (prev.department ? { ...prev, department: '' } : prev));
     }
-  }, [user, activeTab]);
+  }, [user]);
 
   const handleCreateTicket = async (ticketData) => {
     try {
@@ -175,36 +182,43 @@ const HelpDeskPage = () => {
   ];
 
   // Add admin tabs
-  if (user?.role === 'admin' || user?.role === 'faculty') {
+  if (user?.role === 'admin' || user?.role === 'faculty' || user?.role === 'hod') {
     tabs.push({ id: 'manage', label: 'Manage Tickets', icon: Users });
   }
 
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-8">
+      <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 text-white rounded-b-[2.5rem] p-8 sm:p-12 shadow-[0_10px_40px_-10px_rgba(99,102,241,0.5)] overflow-hidden mb-8">
+        <div className="absolute inset-0 bg-black/5"></div>
+        <div className="absolute -right-10 -top-10 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+        
+        <div className="max-w-7xl mx-auto relative z-10 flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md shadow-inner self-start sm:self-center">
+              <AlertCircle className="w-8 h-8 text-white drop-shadow-md" />
+            </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">HelpDesk</h1>
-              <p className="text-gray-600 mt-1">Submit and track service requests</p>
+              <h1 className="text-4xl font-black tracking-tight drop-shadow-md text-white">HelpDesk</h1>
+              <p className="mt-2 text-indigo-100 font-medium text-sm sm:text-base max-w-xl leading-relaxed">
+                Submit and track service requests seamlessly across all campus departments.
+              </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm text-gray-500">Welcome back</p>
-                <p className="font-medium text-gray-900">
-                  {user?.profile?.firstName} {user?.profile?.lastName}
-                </p>
-              </div>
-            </div>
+          </div>
+          <div className="hidden sm:block text-right bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/20 shadow-inner">
+            <p className="text-sm text-indigo-100 font-medium uppercase tracking-wider mb-1">Welcome back</p>
+            <p className="font-bold text-white text-lg">
+              {user?.profile?.firstName} {user?.profile?.lastName}
+            </p>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="bg-gray-100 rounded-lg p-2">
-            <nav className="flex flex-wrap gap-2">
+        <div className="mb-8 flex justify-start">
+          <div className="inline-flex bg-white/60 backdrop-blur-xl border border-white/50 p-1.5 rounded-2xl shadow-sm overflow-x-auto max-w-full no-scrollbar">
+            <nav className="flex gap-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon || Calendar;
                 const isActive = activeTab === tab.id;
@@ -212,13 +226,13 @@ const HelpDeskPage = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`inline-flex items-center space-x-2 px-4 py-2 rounded-md text-sm transition ${
+                    className={`inline-flex items-center whitespace-nowrap space-x-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
                       isActive
-                        ? 'bg-white text-indigo-700 shadow-sm'
-                        : 'text-gray-700 hover:bg-white'
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-[0_4px_15px_rgba(99,102,241,0.3)]'
+                        : 'text-gray-500 hover:text-indigo-600 hover:bg-white/60'
                     }`}
                   >
-                    <Icon className={`h-4 w-4 ${isActive ? 'text-indigo-700' : 'text-gray-500'}`} aria-hidden="true" />
+                    <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-400'}`} aria-hidden="true" />
                     <span>{tab.label}</span>
                   </button>
                 );
@@ -263,95 +277,113 @@ const HelpDeskPage = () => {
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] border border-white/50 shadow-sm p-8 hover:shadow-md transition-shadow">
+              <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 mb-6">Quick Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <button
                   onClick={() => setActiveTab('create')}
-                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="group flex flex-col items-center justify-center p-6 bg-gradient-to-b from-indigo-50 to-white border border-indigo-100 rounded-2xl hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300"
                 >
-                  <Plus className="h-8 w-8 text-indigo-600 mr-3" />
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">Create New Ticket</p>
-                    <p className="text-sm text-gray-500">Submit a service request</p>
+                  <div className="p-4 bg-indigo-100/50 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white transition-colors mb-4">
+                     <Plus className="h-8 w-8 text-indigo-600 group-hover:text-white transition-colors" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-gray-900 mb-1">Create New Ticket</p>
+                    <p className="text-xs text-gray-500 font-medium">Submit a service request</p>
                   </div>
                 </button>
                 <button
                   onClick={() => setActiveTab('tickets')}
-                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="group flex flex-col items-center justify-center p-6 bg-gradient-to-b from-green-50 to-white border border-green-100 rounded-2xl hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300"
                 >
-                  <Calendar className="h-8 w-8 text-green-600 mr-3" />
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">View My Tickets</p>
-                    <p className="text-sm text-gray-500">Track your requests</p>
+                  <div className="p-4 bg-green-100/50 rounded-2xl group-hover:bg-green-600 group-hover:text-white transition-colors mb-4">
+                    <Calendar className="h-8 w-8 text-green-600 group-hover:text-white transition-colors" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-gray-900 mb-1">View My Tickets</p>
+                    <p className="text-xs text-gray-500 font-medium">Track your requests</p>
                   </div>
                 </button>
-                <button
-                  onClick={() => setActiveTab('manage')}
-                  className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Users className="h-8 w-8 text-purple-600 mr-3" />
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">Manage Tickets</p>
-                    <p className="text-sm text-gray-500">Admin panel</p>
-                  </div>
-                </button>
+                {(user?.role === 'admin' || user?.role === 'faculty' || user?.role === 'hod') && (
+                  <button
+                    onClick={() => setActiveTab('manage')}
+                    className="group flex flex-col items-center justify-center p-6 bg-gradient-to-b from-purple-50 to-white border border-purple-100 rounded-2xl hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300"
+                  >
+                    <div className="p-4 bg-purple-100/50 rounded-2xl group-hover:bg-purple-600 group-hover:text-white transition-colors mb-4">
+                      <Users className="h-8 w-8 text-purple-600 group-hover:text-white transition-colors" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-gray-900 mb-1">Manage Tickets</p>
+                      <p className="text-xs text-gray-500 font-medium">Admin & Faculty panel</p>
+                    </div>
+                  </button>
+                )}
               </div>
             </div>
 
             {/* Recent Tickets */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Recent Tickets</h3>
+            <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] border border-white/50 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+              <div className="bg-gray-50/50 px-8 py-5 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-800">Recent Tickets</h3>
+                <button onClick={() => setActiveTab('tickets')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors">View All</button>
               </div>
-              <div className="p-6">
-                {tickets.length > 0 ? (
-                  <div className="space-y-4">
-                    {tickets.slice(0, 5).map((ticket) => (
+              <div className="p-2 sm:p-4">
+                {(() => {
+                  const dept = user?.profile?.department || '';
+                  const recentTickets = (user?.role === 'faculty' || user?.role === 'hod')
+                    ? tickets.filter(t => (t.department || '').toLowerCase() === dept.toLowerCase())
+                    : tickets;
+                  return recentTickets.length > 0 ? (
+                  <div className="space-y-2">
+                    {recentTickets.slice(0, 5).map((ticket) => (
                       <div
                         key={ticket._id}
                         onClick={() => {
                           setSelectedTicket(ticket);
                           setActiveTab('tickets');
                         }}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:shadow-sm cursor-pointer transition"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 border border-transparent hover:border-indigo-100 rounded-2xl hover:bg-indigo-50/30 cursor-pointer transition-all hover:shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:-translate-y-0.5 group"
                         >
                         <div className="flex-1">
-                          <div className="flex items-center space-x-3">
-                            <span className="text-sm font-medium text-gray-900">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <span className="text-xs font-black text-gray-400 bg-gray-100 px-2 py-0.5 rounded uppercase tracking-widest">
                               {ticket.ticketNumber}
                             </span>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              ticket.priority === 'urgent' ? 'bg-red-100 text-red-800' :
-                              ticket.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                              ticket.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-green-100 text-green-800'
+                            <span className={`px-2.5 py-0.5 text-[10px] uppercase tracking-widest font-black rounded text-white shadow-sm ${
+                              ticket.priority === 'urgent' ? 'bg-gradient-to-r from-red-500 to-rose-500' :
+                              ticket.priority === 'high' ? 'bg-gradient-to-r from-orange-400 to-amber-500' :
+                              ticket.priority === 'medium' ? 'bg-gradient-to-r from-blue-400 to-indigo-500' :
+                              'bg-gradient-to-r from-emerald-400 to-teal-500'
                             }`}>
                               {ticket.priority}
                             </span>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              ticket.status === 'open' ? 'bg-blue-100 text-blue-800' :
-                              ticket.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                              ticket.status === 'resolved' ? 'bg-green-100 text-green-800' :
-                              ticket.status === 'closed' ? 'bg-gray-100 text-gray-800' :
-                              'bg-red-100 text-red-800'
+                            <span className={`px-2.5 py-0.5 text-[10px] uppercase tracking-widest font-black rounded-full border shadow-sm ${
+                              ticket.status === 'open' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              ticket.status === 'in_progress' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              ticket.status === 'resolved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              ticket.status === 'closed' ? 'bg-gray-50 text-gray-700 border-gray-200' :
+                              'bg-rose-50 text-rose-700 border-rose-200'
                             }`}>
                               {ticket.status.replace('_', ' ')}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">{ticket.title}</p>
+                          <p className="text-base font-semibold text-gray-800 group-hover:text-indigo-700 transition-colors drop-shadow-sm">{ticket.title}</p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-gray-500">
-                            {new Date(ticket.createdAt).toLocaleDateString()}
+                        <div className="text-left sm:text-right mt-3 sm:mt-0">
+                          <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">
+                            {new Date(ticket.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </p>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-8">No tickets found</p>
-                )}
+                  <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                    <Calendar className="w-12 h-12 mb-3 opacity-50" />
+                    <p className="font-medium text-sm">No recent tickets found</p>
+                  </div>
+                );
+                })()}
               </div>
             </div>
           </div>
@@ -384,8 +416,8 @@ const HelpDeskPage = () => {
           />
         )}
 
-        {/* Manage Tickets Tab (Admin/Faculty) */}
-        {activeTab === 'manage' && (user?.role === 'admin' || user?.role === 'faculty') && (
+        {/* Manage Tickets Tab (Admin/Faculty/HOD) */}
+        {activeTab === 'manage' && (user?.role === 'admin' || user?.role === 'faculty' || user?.role === 'hod') && (
           <div className="h-[calc(100vh-220px)]">
             <TicketList
               tickets={tickets}

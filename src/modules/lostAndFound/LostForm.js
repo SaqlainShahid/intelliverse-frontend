@@ -88,68 +88,76 @@ const LostForm = ({ onItemAdded }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="space-y-1.5">
+          <label className="text-sm font-bold text-gray-700 pl-1 uppercase tracking-wider text-[11px]">Item Name</label>
           <input
             type="text"
             name="itemName"
-            placeholder="Item name"
+            placeholder="e.g. Blue Hydroflask, Keys..."
             value={formData.itemName}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white/50 text-sm focus:ring-iv-indigo/30 focus:border-iv-indigo focus:outline-none"
+            className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 text-gray-800 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
           />
         </div>
 
-        <div>
+        <div className="space-y-1.5">
+          <label className="text-sm font-bold text-gray-700 pl-1 uppercase tracking-wider text-[11px]">Location (Lost or Found)</label>
           <input
             type="text"
             name="location"
-            placeholder="Location"
+            placeholder="e.g. Main Library, Room 101"
             value={formData.location}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white/50 text-sm focus:ring-iv-indigo/30 focus:border-iv-indigo focus:outline-none"
+            className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 text-gray-800 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
           />
         </div>
       </div>
 
-      <div>
+      <div className="space-y-1.5">
+        <label className="text-sm font-bold text-gray-700 pl-1 uppercase tracking-wider text-[11px]">Description</label>
         <textarea
           name="description"
-          placeholder="Description"
+          placeholder="Detailed description of the item..."
           value={formData.description}
           onChange={handleChange}
           required
           rows={3}
-          className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white/50 text-sm focus:ring-iv-indigo/30 focus:border-iv-indigo focus:outline-none"
+          className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 text-gray-800 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none resize-none"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+        <div className="space-y-1.5">
+          <label className="text-sm font-bold text-gray-700 pl-1 uppercase tracking-wider text-[11px]">Status</label>
           <select 
             name="status" 
             value={formData.status} 
             onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-xl bg-white/50 text-sm focus:outline-none focus:ring-iv-indigo/30 focus:border-iv-indigo ${formData.status === 'lost' ? 'border-iv-orange' : 'border-iv-emerald'}`}
+            className={`w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 text-gray-800 text-sm font-semibold focus:bg-white focus:ring-2 focus:border-transparent transition-all outline-none cursor-pointer ${formData.status === 'lost' ? 'focus:ring-orange-400' : 'focus:ring-emerald-400'}`}
           >
-            <option value="lost">Lost</option>
-            <option value="found">Found</option>
+            <option value="lost">I Lost this item</option>
+            <option value="found">I Found this item</option>
           </select>
         </div>
 
-        <div>
+        <div className="space-y-1.5">
+          <label className="text-sm font-bold text-gray-700 pl-1 uppercase tracking-wider text-[11px]">Photo (Optional)</label>
           <div
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            className={`w-full flex items-center justify-center px-4 py-6 border-2 border-dashed rounded-xl cursor-pointer transition-all ${dragActive ? 'border-iv-indigo bg-white/60' : 'border-gray-200 bg-white/50'} `}
+            className={`w-full flex items-center justify-center px-4 py-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${dragActive ? 'border-indigo-500 bg-indigo-50 scale-[1.02]' : 'border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
             onClick={() => fileInputRef.current?.click()}
           >
             <div className="text-center">
-              <p className="text-sm font-medium text-iv-text">Drag & Drop to upload</p>
-              <p className="text-xs text-iv-muted">or click to browse</p>
+              <div className="mx-auto h-8 w-8 text-indigo-400 mb-2">
+                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+              </div>
+              <p className="text-sm font-bold text-gray-700">Drag & Drop image</p>
+              <p className="text-xs text-gray-500 mt-1">or click to browse</p>
             </div>
           </div>
           <input 
@@ -160,8 +168,8 @@ const LostForm = ({ onItemAdded }) => {
             className="hidden"
           />
           {image && (
-            <p className="text-xs text-iv-muted mt-2">
-              {image.name}
+            <p className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg truncate shadow-sm text-center">
+              Selected: {image.name}
             </p>
           )}
         </div>
@@ -170,9 +178,9 @@ const LostForm = ({ onItemAdded }) => {
       <button 
         type="submit" 
         disabled={loading}
-        className="w-full bg-gradient-to-r from-iv-indigo to-purple-600 text-white py-2 px-4 rounded-2xl hover:from-indigo-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-iv-indigo/30 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold shadow-sm"
+        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3.5 px-4 rounded-2xl hover:shadow-[0_8px_25px_-5px_rgba(99,102,241,0.5)] hover:-translate-y-0.5 outline-none focus:ring-4 focus:ring-indigo-500/30 transition-all font-bold text-sm tracking-wide shadow-sm disabled:opacity-50 disabled:cursor-not-allowed uppercase"
       >
-        {loading ? "Reporting..." : "Submit"}
+        {loading ? "Submitting..." : (formData.status === 'lost' ? "Report Lost Item" : "Report Found Item")}
       </button>
     </form>
   );

@@ -94,9 +94,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (otpData) => {
     dispatch({ type: actionTypes.SET_LOADING, payload: true });
-    
+
     const result = await authService.verifyLoginOTP(otpData);
-    
+
     if (result.success) {
       dispatch({ type: actionTypes.SET_USER, payload: result.data.user });
       return { success: true };
@@ -104,6 +104,12 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: actionTypes.SET_ERROR, payload: result.message });
       return { success: false, message: result.message };
     }
+  };
+
+  // Direct login when 2FA is disabled — backend already validated credentials
+  const directLogin = (user) => {
+    dispatch({ type: actionTypes.SET_USER, payload: user });
+    return { success: true };
   };
 
   const signup = async (otpData) => {
@@ -133,6 +139,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     ...state,
     login,
+    directLogin,
     signup,
     logout,
     clearError,

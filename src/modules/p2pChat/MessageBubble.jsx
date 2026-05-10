@@ -4,9 +4,14 @@ import { Check, CheckCheck, FileDown, Play, Pause, MoreVertical, Reply, Pin, Smi
 export default function MessageBubble({ message, sender, isOwn, onReply, onReact, onPin, canPin, canModerate, onEdit, onDelete, onVote }) {
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const status = message.status;
+  const isSending = status === 'sending';
+  const isFailed  = status === 'failed';
+
   const StatusIcon = () => {
     if (!isOwn) return null;
-    if (status === 'seen') return <CheckCheck className="h-3.5 w-3.5 text-cyan-300" />;
+    if (isFailed)   return <span className="text-red-300 text-[10px] font-bold">✕ Failed</span>;
+    if (isSending)  return <span className="text-white/40 text-[10px] animate-pulse">●</span>;
+    if (status === 'seen')      return <CheckCheck className="h-3.5 w-3.5 text-cyan-300" />;
     if (status === 'delivered') return <CheckCheck className="h-3.5 w-3.5 text-white/70" />;
     return <Check className="h-3.5 w-3.5 text-white/50" />;
   };
@@ -199,99 +204,146 @@ export default function MessageBubble({ message, sender, isOwn, onReply, onReact
   };
 
   return (
-    <div id={`message-${message._id}`} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-3 px-2 gap-3`}>
-      {!isOwn && (
-        <div className="flex-shrink-0 self-end mb-1">
-          {sender?.profile?.avatar ? (
-            <img src={sender.profile.avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover shadow-sm bg-gray-200 cursor-pointer" onClick={() => sender?._id && (window.location.href = `/profile/${sender._id}`)} />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm border border-gray-200 cursor-pointer" onClick={() => sender?._id && (window.location.href = `/profile/${sender._id}`)}>
-              {(sender?.profile?.firstName || 'U').charAt(0)}
+    <div id={`message-${message._id}`} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4 px-2 group/msg`}
+      style={{ animation: 'msgIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both' }}
+    >
+      <style>{`@keyframes msgIn { from{opacity:0;transform:translateY(8px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }`}</style>
+      <div className={`relative max-w-[85%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+        {/* Sender Name for Groups */}
+        {!isOwn && (sender?.profile?.firstName) && (
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1 ml-1">{sender.profile.firstName}</span>
+        )}
+
+        <div className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+          {!isOwn && (
+            <div className="flex-shrink-0 mb-1 transform transition-transform group-hover/msg:scale-110">
+              {sender?.profile?.avatar ? (
+                <div className="p-0.5 rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+                  <img src={sender.profile.avatar} alt="Avatar" className="w-8 h-8 rounded-[0.6rem] object-cover bg-gray-50 cursor-pointer" onClick={() => sender?._id && (window.location.href = `/profile/${sender._id}`)} />
+                </div>
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center text-xs font-black text-indigo-600 shadow-sm border border-indigo-100 cursor-pointer" onClick={() => sender?._id && (window.location.href = `/profile/${sender._id}`)}>
+                  {(sender?.profile?.firstName || sender?.profile?.lastName || '?').charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
-      <div className={`group max-w-[75%] rounded-2xl px-4 py-3 shadow-md transition-all ${isOwn ? 'bg-gradient-to-r from-iv-indigo to-purple-600 text-white rounded-tr-sm' : 'bg-white/80 backdrop-blur-sm border border-iv-border text-iv-text rounded-tl-sm'}`}>
-        <ReplyPreview />
-        {message.isDeleted ? (
-          <div className="text-sm opacity-80 italic">Message deleted</div>
-        ) : (
-        <>
-        {!!(message.attachments && message.attachments.length) && (
+
+        <div className={`relative px-4 py-3 transition-all duration-200 group-hover/msg:scale-[1.01] ${
+          isOwn
+            ? 'rounded-[20px] rounded-tr-[6px]'
+            : 'rounded-[20px] rounded-tl-[6px]'
+        }`}
+          style={isOwn ? {
+            background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 60%, #8b5cf6 100%)',
+            boxShadow: '0 2px 8px rgba(124,58,237,0.25), 0 8px 24px rgba(99,102,241,0.2), 0 0 0 1px rgba(139,92,246,0.15)',
+          } : {
+            background: 'rgba(255,255,255,0.88)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(167,139,250,0.18)',
+            boxShadow: '0 2px 8px rgba(139,92,246,0.06), 0 8px 24px rgba(99,102,241,0.08)',
+          }}
+        >
+          <ReplyPreview />
+          
+          {message.isDeleted ? (
+            <div className="text-sm opacity-60 italic font-medium flex items-center gap-2">
+              <Trash2 className="h-3.5 w-3.5" /> This message was deleted
+            </div>
+          ) : (
           <div className="space-y-2">
-            {message.attachments.map((att) => (
-              <div key={att.publicId} className="rounded-lg overflow-hidden">
-                {att.kind === 'image' ? (
-                  <a href={att.url} target="_blank" rel="noreferrer">
-                    <img src={att.url} alt={att.filename} className="max-h-64 max-w-full h-auto rounded-md" />
-                  </a>
-                ) : att.kind === 'video' ? (
-                  <video src={att.url} className="rounded-md max-w-full" controls />
-                ) : att.kind === 'audio' ? (
-                  <AudioPlayer src={att.url} />
-                ) : (
-                  <a href={att.url} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-2 text-sm ${isOwn ? 'text-white' : 'text-indigo-600'}`}>
-                    <FileDown className="h-4 w-4" />
-                    <span className="truncate max-w-[12rem] break-all">{att.filename}</span>
-                  </a>
-                )}
+            {!!(message.attachments && message.attachments.length) && (
+              <div className="space-y-2 mb-2">
+                {message.attachments.map((att) => (
+                  <div key={att.publicId} className="rounded-2xl overflow-hidden shadow-sm">
+                    {att.kind === 'image' ? (
+                      <a href={att.url} target="_blank" rel="noreferrer" className="block hover:opacity-95 transition-opacity">
+                        <img src={att.url} alt={att.filename} className="max-h-80 max-w-full w-auto object-cover" />
+                      </a>
+                    ) : att.kind === 'video' ? (
+                      <video src={att.url} className="w-full max-w-md bg-black" controls />
+                    ) : att.kind === 'audio' ? (
+                      <AudioPlayer src={att.url} />
+                    ) : (
+                      <a href={att.url} target="_blank" rel="noreferrer" className={`flex items-center gap-3 p-3 rounded-xl border ${isOwn ? 'bg-white/10 border-white/20 text-white' : 'bg-indigo-50 border-indigo-100 text-indigo-700'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isOwn ? 'bg-white/20' : 'bg-white'}`}>
+                          <FileDown className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-black truncate">{att.filename}</p>
+                          <p className="text-[10px] opacity-70 uppercase font-bold tracking-tighter">Download File</p>
+                        </div>
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {message.type === 'poll' ? (
+              <div className="py-1">
+                <PollView poll={(message.poll && message.poll.options) ? { options: message.poll.options.map(o => ({ text: o.text, count: (o.votes || []).length })) } : null} />
+              </div>
+            ) : editing ? (
+              <div className="min-w-[200px] space-y-3 p-1">
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/40"
+                  rows={2}
+                />
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => { setEditing(false); setEditText(message.content); }} className="text-[10px] font-black uppercase text-white/70 hover:text-white px-2 py-1">Cancel</button>
+                  <button onClick={() => { onEdit?.(editText); setEditing(false); }} className="text-[10px] font-black uppercase bg-white text-indigo-600 px-4 py-1.5 rounded-lg shadow-lg">Save</button>
+                </div>
+              </div>
+            ) : (!!message.content && (
+              <div className={`text-[15px] font-medium leading-relaxed whitespace-pre-wrap break-words ${isOwn ? 'text-white' : 'text-gray-800'}`}>
+                {message.content}
               </div>
             ))}
           </div>
-        )}
-        {message.type === 'poll' ? (
-          <PollView poll={(message.poll && message.poll.options) ? { options: message.poll.options.map(o => ({ text: o.text, count: (o.votes || []).length })) } : null} />
-        ) : editing ? (
-          <div className="flex items-center gap-2">
-            <input
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              className="flex-1 bg-white/80 border border-gray-300 rounded px-2 py-1 text-sm text-gray-900"
-            />
-            <button
-              onClick={() => { onEdit && onEdit(editText); setEditing(false); }}
-              className="text-xs px-2 py-1 rounded bg-indigo-600 text-white"
-            >Save</button>
-            <button
-              onClick={() => { setEditText(message.content || ''); setEditing(false); }}
-              className="text-xs px-2 py-1 rounded border border-gray-300"
-            >Cancel</button>
+          )}
+
+          {/* Quick Info & Status */}
+          <div className={`mt-2 flex items-center gap-2 ${isOwn ? 'justify-end' : 'justify-start opacity-70'}`}>
+            <span className={`text-[10px] font-bold tracking-tight ${isOwn ? 'text-white/80' : 'text-gray-500'}`}>{time}</span>
+            {!!message.editedAt && !message.isDeleted && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-white/10 rounded-md">Edited</span>}
+            {isOwn && <StatusIcon />}
           </div>
-        ) : (!!message.content && (
-          <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
-            {message.content}
-          </div>
-        ))}
-        </>
-        )}
-        <ReactionsBar />
-        <div className={`mt-2 flex items-center gap-3 ${isOwn ? 'justify-end' : 'justify-start'}`}>
-          <button onClick={onReply} className={`text-[11px] inline-flex items-center gap-1 transition-colors ${isOwn ? 'text-white/70 hover:text-white' : 'text-iv-muted hover:text-iv-text'}`} title="Reply">
-            <Reply className="h-3.5 w-3.5" /> Reply
+        </div>
+      </div>
+
+        {/* Action Bar - Hover Visible */}
+        <div className={`flex items-center gap-3 mt-1.5 transition-all duration-300 opacity-0 transform translate-y-[-10px] group-hover/msg:opacity-100 group-hover/msg:translate-y-0 ${isOwn ? 'justify-end pr-2' : 'justify-start pl-11'}`}>
+          <button onClick={onReply} className="p-1.5 rounded-lg hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 transition-all active:scale-90" title="Reply">
+            <Reply size={14} className="transform -scale-x-100" />
           </button>
-          <button onClick={() => onReact && onReact('👍')} className={`text-[11px] inline-flex items-center gap-1 transition-colors ${isOwn ? 'text-white/70 hover:text-white' : 'text-iv-muted hover:text-iv-text'}`} title="React">
-            <Smile className="h-3.5 w-3.5" /> React
+          <button onClick={() => onReact?.('👍')} className="p-1.5 rounded-lg hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 transition-all active:scale-90" title="React">
+            <Smile size={14} />
           </button>
           {canPin && (
-            <button onClick={onPin} className={`text-[11px] inline-flex items-center gap-1 transition-colors ${isOwn ? 'text-white/70 hover:text-white' : 'text-iv-muted hover:text-iv-text'}`} title="Pin/Unpin">
-              <Pin className="h-3.5 w-3.5" /> Pin
+            <button onClick={onPin} className="p-1.5 rounded-lg hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 transition-all active:scale-90" title="Pin">
+              <Pin size={14} />
             </button>
           )}
-          {(isOwn || canModerate) && !message.isDeleted && message.type !== 'poll' && (
-            <>
-              <button type="button" onClick={() => setEditing(true)} className={`text-[11px] inline-flex items-center gap-1 transition-colors ${isOwn ? 'text-white/70 hover:text-white' : 'text-iv-muted hover:text-iv-text'}`} title="Edit">
-                <Edit3 className="h-3.5 w-3.5" /> Edit
+          {(isOwn || canModerate) && !message.isDeleted && (
+            <div className="flex gap-2">
+              {message.type !== 'poll' && (
+                <button onClick={() => setEditing(true)} className="p-1.5 rounded-lg hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 transition-all active:scale-90">
+                  <Edit3 size={14} />
+                </button>
+              )}
+              <button onClick={() => { if(window.confirm('Delete message?')) onDelete?.(); }} className="p-1.5 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600 transition-all active:scale-90">
+                <Trash2 size={14} />
               </button>
-              <button type="button" onClick={() => onDelete && onDelete()} className={`text-[11px] inline-flex items-center gap-1 transition-colors ${isOwn ? 'text-white/70 hover:text-white' : 'text-iv-muted hover:text-iv-text'}`} title="Delete">
-                <Trash2 className="h-3.5 w-3.5" /> Delete
-              </button>
-            </>
+            </div>
           )}
         </div>
-        <div className={`mt-1 flex items-center gap-1 ${isOwn ? 'justify-end text-white/80' : 'justify-end text-iv-muted'}`}>
-          <span className="text-[10px] font-medium">{time}</span>
-          {!!message.editedAt && !message.isDeleted && <span className="text-[10px] opacity-70">edited</span>}
-          <StatusIcon />
+
+        <div className={`${isOwn ? '' : 'ml-11'}`}>
+          <ReactionsBar />
         </div>
       </div>
     </div>

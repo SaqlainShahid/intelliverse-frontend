@@ -57,7 +57,7 @@ const Header = () => {
 
   return (
     <header 
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-[3000] transition-all duration-300 ${
         isScrolled 
           ? 'bg-white/30 backdrop-blur-3xl shadow-sm border-b border-white/20' 
           : 'bg-white/10 backdrop-blur-2xl border-b border-transparent'

@@ -209,21 +209,88 @@ const TicketDetails = ({
           {canEdit && (
           <>
               {isAdminView && !['resolved','closed'].includes(ticket.status) && (
-                <button
-                  onClick={async () => {
-                    if (!onUpdate) return;
-                    setLoading(true);
-                    try {
-                      await onUpdate(ticket._id, { status: 'resolved' });
-                    } catch (e) {}
-                    setLoading(false);
-                  }}
-                  disabled={loading}
-                  className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 w-full sm:w-auto"
-                >
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Resolve
-                </button>
+                <>
+                  {ticket.isAttendanceIssue ? (
+                    <>
+                      {ticket.status === 'pending_teacher' && (
+                        <button
+                          onClick={async () => {
+                            if (!onUpdate) return;
+                            setLoading(true);
+                            try { await onUpdate(ticket._id, { status: 'pending_faculty' }); } catch (e) {}
+                            setLoading(false);
+                          }}
+                          disabled={loading}
+                          className="flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 w-full sm:w-auto"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Approve Teacher Stage
+                        </button>
+                      )}
+                      {ticket.status === 'pending_faculty' && (
+                        <button
+                          onClick={async () => {
+                            if (!onUpdate) return;
+                            setLoading(true);
+                            try { await onUpdate(ticket._id, { status: 'pending_hod' }); } catch (e) {}
+                            setLoading(false);
+                          }}
+                          disabled={loading}
+                          className="flex items-center px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 w-full sm:w-auto"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Approve Overseer Stage
+                        </button>
+                      )}
+                      {ticket.status === 'pending_hod' && (
+                        <button
+                          onClick={async () => {
+                            if (!onUpdate) return;
+                            setLoading(true);
+                            try { await onUpdate(ticket._id, { status: 'resolved' }); } catch (e) {}
+                            setLoading(false);
+                          }}
+                          disabled={loading}
+                          className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 w-full sm:w-auto"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Resolve (HOD Review)
+                        </button>
+                      )}
+                      {ticket.status === 'open' && (
+                        <button
+                          onClick={async () => {
+                            if (!onUpdate) return;
+                            setLoading(true);
+                            try { await onUpdate(ticket._id, { status: 'pending_teacher' }); } catch (e) {}
+                            setLoading(false);
+                          }}
+                          disabled={loading}
+                          className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 w-full sm:w-auto"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Start Approval Chain
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <button
+                      onClick={async () => {
+                        if (!onUpdate) return;
+                        setLoading(true);
+                        try {
+                          await onUpdate(ticket._id, { status: 'resolved' });
+                        } catch (e) {}
+                        setLoading(false);
+                      }}
+                      disabled={loading}
+                      className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 w-full sm:w-auto"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Resolve
+                    </button>
+                  )}
+                </>
               )}
               {isEditing ? (
                 <>

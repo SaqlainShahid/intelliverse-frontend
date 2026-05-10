@@ -25,8 +25,15 @@ export const searchMessages = async (chatId, q, limit = 20) => {
   return res.data;
 };
 
-export const searchUsers = async (search, limit = 8) => {
-  const res = await api.get('/p2p/users', { params: { search, limit } });
+export const searchUsers = async (search, limit = 12, filters = {}) => {
+  const params = { search, limit };
+  if (filters.role && filters.role !== 'all') params.role = filters.role;
+  if (filters.scope && filters.scope !== 'all') params.scope = filters.scope;
+  if (filters.departments?.length > 0) params.departments = filters.departments.join(',');
+  if (filters.designation && filters.designation !== 'all') params.designation = filters.designation;
+  if (filters.employeeType && filters.employeeType !== 'all') params.employeeType = filters.employeeType;
+  if (filters.expertise) params.expertise = filters.expertise;
+  const res = await api.get('/p2p/users', { params });
   return res.data;
 };
 
@@ -119,5 +126,95 @@ export const unarchiveChat = async (chatId) => {
 
 export const deleteChat = async (chatId) => {
   const res = await api.post(`/p2p/chats/${chatId}/delete`);
+  return res.data;
+};
+// Chat Request APIs
+export const canMessage = async (recipientId) => {
+  const res = await api.get(`/p2p/can-message/${recipientId}`);
+  return res.data;
+};
+
+export const sendChatRequest = async (recipientId, message = null) => {
+  const res = await api.post('/p2p/requests/send', { recipientId, message });
+  return res.data;
+};
+
+export const getPendingRequests = async () => {
+  const res = await api.get('/p2p/requests/pending');
+  return res.data;
+};
+
+export const getAllRequests = async () => {
+  const res = await api.get('/p2p/requests/all');
+  return res.data;
+};
+
+export const acceptChatRequest = async (requestId) => {
+  const res = await api.post(`/p2p/requests/${requestId}/accept`);
+  return res.data;
+};
+
+export const declineChatRequest = async (requestId) => {
+  const res = await api.post(`/p2p/requests/${requestId}/decline`);
+  return res.data;
+};
+
+export const deleteChatRequest = async (requestId) => {
+  const res = await api.delete(`/p2p/requests/${requestId}`);
+  return res.data;
+};
+
+export const blockUser = async (userId) => {
+  const res = await api.post(`/p2p/requests/block/${userId}`);
+  return res.data;
+};
+
+export const unblockUser = async (userId) => {
+  const res = await api.post(`/p2p/requests/unblock/${userId}`);
+  return res.data;
+};
+
+export const getDirectoryStats = async () => {
+  const res = await api.get('/p2p/directory/stats');
+  return res.data;
+};
+
+export const updateExpertise = async (expertise) => {
+  const res = await api.patch('/p2p/expertise', { expertise });
+  return res.data;
+};
+
+export const updateOfficeHours = async (officeHours) => {
+  const res = await api.patch('/p2p/office-hours', { officeHours });
+  return res.data;
+};
+
+export const getAnalyticsOverview = async () => {
+  const res = await api.get('/p2p/analytics/overview');
+  return res.data;
+};
+
+export const broadcastMessage = async (message, filters = {}, groupName = '') => {
+  const res = await api.post('/p2p/broadcast', { message, filters, groupName });
+  return res.data;
+};
+
+export const submitGroupRequest = async (payload) => {
+  const res = await api.post('/p2p/group-requests', payload);
+  return res.data;
+};
+
+export const getGroupRequests = async (status = 'pending') => {
+  const res = await api.get('/p2p/group-requests', { params: { status } });
+  return res.data;
+};
+
+export const approveGroupRequest = async (id) => {
+  const res = await api.patch(`/p2p/group-requests/${id}/approve`);
+  return res.data;
+};
+
+export const rejectGroupRequest = async (id, reason = '') => {
+  const res = await api.patch(`/p2p/group-requests/${id}/reject`, { reason });
   return res.data;
 };

@@ -68,17 +68,15 @@ export default function useChatbot() {
     try {
       const result = await ask(text);
       const { answer, confidence = 0, escalated = false, ticketId, sources = [], sourceUrlRelative = null, sourceUrl = null } = result;
-      const friendlyFallback = 'Sorry, this information is not available in the academic regulations document.';
-      const base = answer && answer.trim().length ? answer.trim() : friendlyFallback;
-      const sourceLine = sources && sources.length ? `\n\nSource: ${sources[0].filename}${sources[0].page ? ` (page ${sources[0].page})` : ''}` : '';
-      const aiMsg = { role: 'assistant', content: base + sourceLine, id: Date.now() + '-a', sources, sourceUrlRelative, sourceUrl, confidence, escalated, ticketId };
+      const base = answer && answer.trim().length ? answer.trim() : 'I am sorry, but I could not find a specific answer to that in the university records.';
+      const aiMsg = { role: 'assistant', content: base, id: Date.now() + '-a', sources, sourceUrlRelative, sourceUrl, confidence, escalated, ticketId };
       const nextMessages = [...nextUserMessages, aiMsg];
       setMessages(nextMessages);
       try { localStorage.setItem(storageKey, JSON.stringify(nextMessages)); } catch {}
       setTyping(false);
       return { confidence, escalated, ticketId };
     } catch (e) {
-      const aiMsg = { role: 'assistant', content: 'Sorry, I could not load the answer right now. Please try again in a moment.', id: Date.now() + '-e' };
+      const aiMsg = { role: 'assistant', content: 'Our systems are experiencing temporary connectivity issues. Please try again in 60 seconds.', id: Date.now() + '-e' };
       const nextMessages = [...nextUserMessages, aiMsg];
       setMessages(nextMessages);
       try { localStorage.setItem(storageKey, JSON.stringify(nextMessages)); } catch {}

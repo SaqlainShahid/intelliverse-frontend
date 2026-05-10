@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Send, Paperclip, Mic, Square, Reply } from 'lucide-react';
+import { Send, Plus, X, Mic, Square, Reply, Image, FileText, Music } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { uploadMedia } from '../../services/chatService';
 
@@ -14,6 +14,33 @@ export default function MessageInput({ onSend, onTyping, replyTo, clearReply, di
   const timerRef = useRef(null);
   const streamRef = useRef(null);
   const startTsRef = useRef(0);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const attachMenuRef = useRef(null);
+
+  // Close attach menu on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (attachMenuRef.current && !attachMenuRef.current.contains(e.target)) {
+        setAttachMenuOpen(false);
+      }
+    };
+    if (attachMenuOpen) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [attachMenuOpen]);
+
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+    if (disabled) { toast.error('Sending is disabled in this chat'); return; }
+    try {
+      const res = await uploadMedia(file);
+      if (res?.success && res.data) {
+        window.dispatchEvent(new CustomEvent('chat:send-attachment', { detail: res.data }));
+      }
+    } catch {
+      toast.error('Failed to upload file');
+    }
+    setAttachMenuOpen(false);
+  };
 
   const pickMimeType = () => {
     if (window.MediaRecorder) {
@@ -136,77 +163,88 @@ export default function MessageInput({ onSend, onTyping, replyTo, clearReply, di
 
   const disabledSend = disabled || !text.trim();
   return (
-    <form onSubmit={handleSubmit} className="sticky bottom-0 left-0 right-0 z-10 p-4 border-t border-iv-border bg-iv-glass/90 backdrop-blur-xl">
-      <div className="flex items-center gap-3">
-        {replyTo && (
-          <div className="absolute bottom-full left-0 right-0 mb-0 px-4 py-2 bg-iv-glass backdrop-blur-md border-t border-iv-border flex justify-between items-center animate-fade-in-up">
-            <div className="flex items-center gap-2 text-sm text-iv-indigo font-medium overflow-hidden">
-              <Reply className="h-4 w-4 shrink-0" />
-              <span className="truncate">
-                Replying to: {(replyTo.content || (replyTo.attachments && replyTo.attachments[0]?.filename) || 'Attachment')}
-              </span>
+    <form onSubmit={handleSubmit} className="relative z-50"
+      style={{ background: 'rgba(255,255,255,0.95)', borderTop: '1px solid rgba(0,0,0,0.06)' }}
+    >
+      {/* Reply Preview */}
+      {replyTo && (
+        <div className="px-5 py-3 bg-violet-50/80 border-b border-violet-100 flex items-center gap-3">
+          <div className="w-1 self-stretch bg-violet-500 rounded-full" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold uppercase text-violet-600 mb-0.5">Replying</p>
+            <p className="text-sm text-gray-700 truncate">{replyTo.content || 'Attachment'}</p>
+          </div>
+          <button type="button" onClick={clearReply} className="p-1.5 rounded-lg hover:bg-white text-gray-400"><X size={14} /></button>
+        </div>
+      )}
+
+      <div className="px-4 py-3 flex items-center gap-3">
+        {/* + Attach */}
+        <div className="relative" ref={attachMenuRef}>
+          <input id="attach-image" type="file" accept="image/*,video/*" className="hidden" onChange={(e) => { handleFileUpload(e.target.files?.[0]); e.target.value = ''; }} />
+          <input id="attach-doc" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" className="hidden" onChange={(e) => { handleFileUpload(e.target.files?.[0]); e.target.value = ''; }} />
+          <input id="attach-audio" type="file" accept="audio/*" className="hidden" onChange={(e) => { handleFileUpload(e.target.files?.[0]); e.target.value = ''; }} />
+          <button type="button" disabled={disabled}
+            onClick={() => !disabled && setAttachMenuOpen(!attachMenuOpen)}
+            className={`h-10 w-10 rounded-full flex items-center justify-center transition-all ${attachMenuOpen ? 'bg-violet-600 text-white rotate-45' : 'bg-gray-100 text-gray-500 hover:bg-violet-50 hover:text-violet-600'}`}>
+            <Plus size={20} />
+          </button>
+          {attachMenuOpen && (
+            <div className="absolute bottom-full left-0 mb-3 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 p-1.5 z-50">
+              {[
+                { id: 'attach-image', icon: Image, label: 'Image/Video', color: 'text-emerald-500' },
+                { id: 'attach-doc', icon: FileText, label: 'Document', color: 'text-blue-500' },
+                { id: 'attach-audio', icon: Music, label: 'Audio', color: 'text-violet-500' },
+              ].map((item) => (
+                <label key={item.id} htmlFor={item.id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                  <item.icon size={16} className={item.color} />
+                  <span className="text-[13px] font-medium text-gray-700">{item.label}</span>
+                </label>
+              ))}
             </div>
-            <button type="button" onClick={clearReply} className="text-iv-muted hover:text-iv-text p-1 rounded-full hover:bg-black/5 transition-colors">
-               <span className="sr-only">Close</span>
-               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-        )}
-        <label className={`h-11 w-11 flex items-center justify-center rounded-xl border transition-all duration-200 ${disabled ? 'border-iv-border opacity-60 cursor-not-allowed' : 'border-iv-border bg-white/50 hover:bg-iv-indigo/10 hover:border-iv-indigo/30 cursor-pointer text-iv-muted hover:text-iv-indigo'}`}>
-          <Paperclip className="h-5 w-5" />
-          <input
-            type="file"
-            accept="image/*,video/*,audio/*,application/pdf"
-            className="hidden"
-            onChange={async (e) => {
-              if (disabled) {
-                e.target.value = '';
-                toast.error('Sending is disabled in this chat');
-                return;
-              }
-              const file = e.target.files?.[0];
-              if (!file) return;
-              try {
-                const res = await uploadMedia(file);
-                if (res?.success && res.data) {
-                  const att = res.data;
-                  const evt = new CustomEvent('chat:send-attachment', { detail: att });
-                  window.dispatchEvent(evt);
-                }
-              } catch {}
-              e.target.value = '';
-            }}
+          )}
+        </div>
+
+        {/* Input with inline icons */}
+        <div className="flex-1 flex items-center rounded-full border border-gray-100 bg-gray-50 px-4 py-2.5 gap-2 focus-within:border-violet-200 focus-within:bg-white transition-colors">
+          <textarea rows={1} value={text} onChange={handleChange}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
+            placeholder={disabled ? "Sending disabled..." : "Type a message..."}
+            disabled={recording || disabled}
+            className="flex-1 bg-transparent outline-none text-[14px] text-gray-800 placeholder:text-gray-400 font-medium resize-none max-h-32 py-1"
+            style={{ minHeight: '24px' }}
           />
-        </label>
-        <button
-          type="button"
-          onClick={() => (recording ? stopRecording() : startRecording())}
-          disabled={disabled}
-          className={`h-11 w-11 flex items-center justify-center rounded-xl border transition-all duration-200 ${disabled ? 'border-iv-border opacity-60 cursor-not-allowed' : recording ? 'border-red-500 bg-red-50 text-red-600 animate-pulse' : 'border-iv-border bg-white/50 hover:bg-iv-indigo/10 hover:border-iv-indigo/30 text-iv-muted hover:text-iv-indigo'}`}
-          title={recording ? 'Stop recording' : 'Record voice'}
-        >
-          {recording ? <Square className="h-4 w-4 fill-current" /> : <Mic className="h-5 w-5" />}
-        </button>
-        {recording && (
-          <div className="text-sm text-red-600 font-bold font-mono px-2 animate-pulse">
-            {String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}
+          <div className="flex items-center gap-0.5 shrink-0 pb-0.5">
+            <button type="button" className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-violet-500 hover:bg-violet-50 transition-colors" title="Emoji">
+              <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            </button>
+            <label htmlFor="attach-image" className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-violet-500 hover:bg-violet-50 transition-colors cursor-pointer" title="Attach">
+              <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            </label>
+            {!text.trim() && (
+              <button type="button" onClick={() => (recording ? stopRecording() : startRecording())} disabled={disabled}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${recording ? 'bg-rose-500 text-white animate-pulse' : 'text-gray-400 hover:text-violet-500 hover:bg-violet-50'}`}>
+                {recording ? <Square size={14} className="fill-current" /> : <Mic size={18} />}
+              </button>
+            )}
           </div>
-        )}
-        <input
-          className="flex-1 bg-white/50 border border-iv-border rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-iv-indigo/50 text-iv-text placeholder:text-iv-muted transition-all duration-200"
-          placeholder="Type a message..."
-          value={text}
-          onChange={handleChange}
-          disabled={recording || disabled}
-        />
-        <button
-          type="submit"
-          disabled={disabledSend}
-          className={`h-11 px-6 rounded-xl inline-flex items-center gap-2 font-medium transition-all duration-200 shadow-lg shadow-iv-indigo/20 ${disabledSend ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-iv-indigo text-white hover:bg-iv-indigo/90 hover:scale-105 active:scale-95'}`}
-        >
-          <Send className="h-4 w-4" />
-          <span>Send</span>
+        </div>
+
+        {recording && <span className="text-[11px] font-mono font-bold text-rose-500 animate-pulse">{String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}</span>}
+
+        {/* Round purple send */}
+        <button onClick={handleSubmit} disabled={disabled || (!text.trim() && !recording)}
+          className={`h-11 w-11 rounded-full flex items-center justify-center transition-all shrink-0 ${disabledSend ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'text-white hover:scale-105 active:scale-95'}`}
+          style={disabledSend ? {} : { background: 'linear-gradient(135deg, #7c3aed, #6366f1)' }}>
+          <Send size={18} />
         </button>
+      </div>
+
+      <div className="text-center pb-2 pt-0">
+        <span className="text-[10px] text-gray-400 font-medium flex items-center justify-center gap-1">
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Your messages are end-to-end encrypted
+        </span>
       </div>
     </form>
   );

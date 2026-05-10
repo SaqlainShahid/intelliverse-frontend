@@ -5,7 +5,7 @@ import LostForm from "./LostForm";
 import { getAllItems } from "./lostAndFoundService";
 import { useAuth } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
-import GlassCard from "../../components/dashboard-ui/GlassCard";
+import { GlassCard } from '../../dashboards/shared';
 import { Search, Filter, ArrowDownWideNarrow, RefreshCcw } from "lucide-react";
 
 const LostAndFoundList = () => {
@@ -101,67 +101,70 @@ const LostAndFoundList = () => {
 
   return (
     <div className="space-y-6">
-      <GlassCard className="p-6 rounded-3xl">
-        <div className="mb-4 text-xl font-bold text-iv-text">Report New Item</div>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-[2rem] shadow-sm p-6 sm:p-8 hover:shadow-md transition-shadow">
+        <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 tracking-tight">Report New Item</h2>
+            <div className="h-px bg-gradient-to-r from-indigo-100 to-transparent flex-1 ml-6"></div>
+        </div>
         <LostForm onItemAdded={loadItems} />
-      </GlassCard>
+      </div>
 
-      <GlassCard className="p-4 rounded-3xl">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-iv-muted" />
+      <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-[2rem] shadow-sm p-4 sm:p-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 group-focus-within:text-indigo-600 transition-colors" />
             <input
               type="text"
-              placeholder="Search"
+              placeholder="Search items..."
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl bg-white/50 text-sm focus:ring-iv-indigo/30 focus:border-iv-indigo focus:outline-none"
+              className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 text-gray-800 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium placeholder:font-normal"
             />
           </div>
 
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-iv-muted" />
+          <div className="relative group">
+            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 group-focus-within:text-indigo-600 transition-colors" />
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl bg-white/50 text-sm focus:ring-iv-indigo/30 focus:border-iv-indigo focus:outline-none"
+              className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 text-gray-800 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium cursor-pointer"
             >
-              <option value="">All Status</option>
+              <option value="">All Statuses</option>
               <option value="lost">Lost</option>
               <option value="found">Found</option>
               <option value="claimed">Claimed</option>
             </select>
           </div>
 
-          <div className="relative">
-            <ArrowDownWideNarrow className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-iv-muted" />
+          <div className="relative group">
+            <ArrowDownWideNarrow className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400 group-focus-within:text-indigo-600 transition-colors" />
             <select
               value={filters.sort}
               onChange={(e) => handleFilterChange('sort', e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl bg-white/50 text-sm focus:ring-iv-indigo/30 focus:border-iv-indigo focus:outline-none"
+              className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 text-gray-800 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium cursor-pointer"
             >
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
             </select>
           </div>
 
-          <div className="flex gap-2 md:col-span-2">
+          <div className="flex gap-3 md:col-span-2">
             <button
               onClick={clearFilters}
-              className="flex-1 bg-white/60 text-iv-muted border border-gray-200 py-2 px-3 rounded-xl hover:bg-gray-50 text-sm font-medium"
+              className="flex-1 bg-white text-gray-600 border border-gray-200 py-3 px-4 rounded-2xl hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 text-sm font-bold uppercase tracking-wide transition-all shadow-sm"
             >
               Clear
             </button>
             <button
               onClick={loadItems}
-              className="flex-1 bg-iv-indigo text-white py-2 px-3 rounded-xl hover:bg-indigo-600 text-sm font-semibold inline-flex items-center justify-center"
+              className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-4 rounded-2xl hover:shadow-[0_4px_15px_rgba(99,102,241,0.4)] hover:-translate-y-0.5 text-sm font-bold uppercase tracking-wide inline-flex items-center justify-center transition-all shadow-sm"
             >
-              <RefreshCcw className="w-4 h-4 mr-1" />
+              <RefreshCcw className="w-4 h-4 mr-2" />
               Refresh
             </button>
           </div>
         </div>
-      </GlassCard>
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

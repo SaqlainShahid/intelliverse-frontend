@@ -34,14 +34,18 @@ class AuthService {
     }
   }
 
-  // Send login OTP
+  // Send login OTP (or skip OTP entirely when 2FA is disabled)
   async sendLoginOTP(credentials) {
     try {
       const response = await api.post('/auth/login/send-otp', credentials);
-      return {
-        success: true,
-        data: response.data
-      };
+      const data = response.data?.data;
+      // Backend returns tokens directly when user has 2FA disabled
+      if (data?.tokens && data?.user) {
+        setTokens(data.tokens.accessToken, data.tokens.refreshToken);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        return { success: true, skipOtp: true, data };
+      }
+      return { success: true, skipOtp: false, data: response.data };
     } catch (error) {
       return {
         success: false,

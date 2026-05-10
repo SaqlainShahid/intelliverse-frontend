@@ -70,4 +70,22 @@ export const getDepartments = async () => {
     } catch (error) {
         throw error.response?.data || error.message;
     }
-}
+};
+
+export const setQueryTopicTags = async (id, topicTags) => {
+  try {
+    const response = await api.patch(`/ai/queries/${id}/tags`, { topicTags });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const getTopicAnalytics = async (filters = {}) => {
+  try {
+    const response = await api.get('/ai/analytics/topics', { params: filters });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};

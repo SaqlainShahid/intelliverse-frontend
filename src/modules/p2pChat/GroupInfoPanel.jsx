@@ -12,6 +12,9 @@ export default function GroupInfoPanel({ chat, mutedUserIds, onMuteToggle }) {
   const [announcementOnly, setAnnouncementOnly] = useState(false);
   const [roleMentionsEnabled, setRoleMentionsEnabled] = useState(true);
   const [participantsLocal, setParticipantsLocal] = useState([]);
+  const [category, setCategory] = useState(chat?.category || null);
+  const [clubId, setClubId] = useState(chat?.clubId || null);
+  const [eventId, setEventId] = useState(chat?.eventId || null);
   const [searchText, setSearchText] = useState('');
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
@@ -27,6 +30,11 @@ export default function GroupInfoPanel({ chat, mutedUserIds, onMuteToggle }) {
         if (res?.success && Array.isArray(res.data?.participants)) {
           setParticipantsLocal(res.data.participants);
         }
+        if (res?.success) {
+          setCategory(res.data?.category || category);
+          setClubId(res.data?.clubId || clubId);
+          setEventId(res.data?.eventId || eventId);
+        }
       } catch {}
     })();
   }, [chat?._id]);
@@ -39,8 +47,21 @@ export default function GroupInfoPanel({ chat, mutedUserIds, onMuteToggle }) {
         <div className="font-semibold text-gray-900">{name}</div>
         {desc && <div className="mt-1 text-gray-600">{desc}</div>}
         <div className="mt-2 text-gray-500">Members: {count}</div>
+        {category && (
+          <div className="mt-1">
+            <span className={`text-[10px] px-2 py-0.5 rounded-full border ${category === 'event' ? 'border-purple-300 text-purple-700 bg-purple-50' : category === 'club' ? 'border-iv-emerald/40 text-iv-emerald bg-iv-emerald/10' : 'border-iv-border text-iv-muted bg-white/40'}`}>
+              {category === 'event' ? 'Event Group' : category === 'club' ? 'Club Group' : 'Group'}
+            </span>
+          </div>
+        )}
         <div className="mt-3">
           <a href={`/groups/${chat._id}`} className="text-xs px-3 py-1.5 inline-flex rounded-lg border border-iv-border hover:bg-iv-indigo/10 text-iv-text font-medium transition-colors">Open Group Page</a>
+          {eventId && (
+            <a href={`/events`} className="ml-2 text-xs px-3 py-1.5 inline-flex rounded-lg border border-purple-300 hover:bg-purple-50 text-purple-700 font-medium transition-colors">View Event</a>
+          )}
+          {clubId && !eventId && (
+            <a href={`/events`} className="ml-2 text-xs px-3 py-1.5 inline-flex rounded-lg border border-iv-emerald/40 hover:bg-iv-emerald/10 text-iv-emerald font-medium transition-colors">View Club</a>
+          )}
         </div>
         
         {participants.length > 0 && (

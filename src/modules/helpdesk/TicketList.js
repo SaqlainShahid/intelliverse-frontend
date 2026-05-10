@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import TicketCard from './TicketCard';
 import TicketDetails from './TicketDetails';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import helpdeskService from '../../services/helpdeskService';
 
@@ -32,6 +33,7 @@ const TicketList = ({
   onDeleteTicket
 }) => {
   const [showFilters, setShowFilters] = useState(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const categories = helpdeskService.getCategories();
@@ -65,8 +67,11 @@ const TicketList = ({
     const matchesPriority = !filters.priority || ticket.priority === filters.priority;
     const matchesCategory = !filters.category || ticket.category === filters.category;
     const matchesDepartment = !filters.department || ticket.department === filters.department;
+    const staffDeptRule = (user?.role === 'faculty' || user?.role === 'hod')
+      ? ((user?.profile?.department) ? ((ticket.department || '').toLowerCase() === user.profile.department.toLowerCase()) : false)
+      : true;
 
-    return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesDepartment;
+    return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesDepartment && staffDeptRule;
   });
 
   return (

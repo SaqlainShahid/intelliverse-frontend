@@ -5,6 +5,11 @@ const list = async (params = {}) => {
   return data;
 };
 
+const listPending = async (params = {}) => {
+  const { data } = await api.get('/events/pending', { params });
+  return data;
+};
+
 const getCategories = async () => {
   const { data } = await api.get('/events/categories');
   return data;
@@ -113,4 +118,27 @@ const reject = async (id, reason) => {
   return data;
 };
 
-export default { list, getCategories, getById, create, update, remove, join, leave, generateQr, checkIn, submitFeedback, getFeedback, sendReminders, resolveByCode, downloadIcs, downloadAttendeesCsv, announce, approve, reject };
+const eventsService = {
+  list,
+  listPending,
+  getCategories,
+  getById,
+  create,
+  update,
+  remove,
+  join,
+  leave,
+  generateQr,
+  checkIn,
+  submitFeedback,
+  getFeedback,
+  sendReminders,
+  resolveByCode,
+  downloadIcs,
+  downloadAttendeesCsv,
+  announce,
+  approve,
+  reject
+};
+
+export default eventsService;
