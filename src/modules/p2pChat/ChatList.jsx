@@ -248,17 +248,26 @@ export default function ChatList({ chats, onSelect, activeChatId, socket, curren
               </button>
             )}
             <div className="h-px bg-gray-50 mx-4 my-1" />
-            {onDelete && (
-              <button
-                onClick={() => { if (window.confirm('Clear all chat history?')) onDelete(contextMenu.chat._id); setContextMenu(null); }}
-                className="w-full text-left px-4 py-3 text-xs font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50 rounded-2xl transition-all flex items-center gap-3 group"
-              >
-                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Trash2 size={14} />
-                </div>
-                Delete Chat
-              </button>
-            )}
+            {onDelete && (() => {
+              const isBroadcast = contextMenu.chat.category === 'broadcast';
+              const isCreator = isBroadcast && (contextMenu.chat.admins || []).includes(String(currentUserId));
+              if (isBroadcast && !isCreator) return null;
+              return (
+                <button
+                  onClick={() => {
+                    const label = isBroadcast ? 'Delete this announcement and all its messages?' : 'Clear all chat history?';
+                    if (window.confirm(label)) onDelete(contextMenu.chat._id);
+                    setContextMenu(null);
+                  }}
+                  className="w-full text-left px-4 py-3 text-xs font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50 rounded-2xl transition-all flex items-center gap-3 group"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Trash2 size={14} />
+                  </div>
+                  {isBroadcast ? 'Delete Announcement' : 'Delete Chat'}
+                </button>
+              );
+            })()}
           </div>
         </div>,
         document.body
