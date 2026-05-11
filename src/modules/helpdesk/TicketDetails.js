@@ -70,6 +70,9 @@ const TicketDetails = ({
       case 'open': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'in_progress': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'pending_user': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'pending_teacher': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'pending_faculty': return 'bg-violet-100 text-violet-800 border-violet-200';
+      case 'pending_hod': return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'resolved': return 'bg-green-100 text-green-800 border-green-200';
       case 'closed': return 'bg-gray-100 text-gray-800 border-gray-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
@@ -155,10 +158,18 @@ const TicketDetails = ({
 
   const canEdit = isAdminView || ticket.reportedBy._id === user._id;
   const canAddComments = isAdminView || ticket.reportedBy._id === user._id;
-  const canSubmitFeedback = ticket.reportedBy._id === user._id && 
-                           ['resolved', 'closed'].includes(ticket.status) && 
+  const canSubmitFeedback = ticket.reportedBy._id === user._id &&
+                           ['resolved', 'closed'].includes(ticket.status) &&
                            !ticket.feedback?.rating;
   const canUploadAttachment = isAdminView || ticket.reportedBy._id === user._id;
+
+  // Attendance approval chain role detection
+  const designation = (user?.profile?.designation || '').toLowerCase();
+  const teachingKeywords = ['teacher', 'lecturer', 'professor', 'instructor', 'visiting', 'lab engineer'];
+  const isTeachingStaff = user?.role === 'faculty' && teachingKeywords.some(k => designation.includes(k));
+  const isFacultyOverseer = user?.role === 'faculty' && designation.includes('coordinator');
+  const isHOD = user?.role === 'hod' || (user?.role === 'faculty' && (designation.includes('hod') || designation.includes('head of department')));
+  const isAdminRole = user?.role === 'admin';
 
   return (
     <div className="bg-white rounded-lg shadow h-full min-h-0 flex flex-col overflow-x-hidden">
@@ -212,7 +223,8 @@ const TicketDetails = ({
                 <>
                   {ticket.isAttendanceIssue ? (
                     <>
-                      {ticket.status === 'pending_teacher' && (
+                      {/* Stage 1 — only teaching staff can approve */}
+                      {ticket.status === 'pending_teacher' && (isTeachingStaff || isAdminRole) && (
                         <button
                           onClick={async () => {
                             if (!onUpdate) return;
@@ -221,13 +233,20 @@ const TicketDetails = ({
                             setLoading(false);
                           }}
                           disabled={loading}
-                          className="flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 w-full sm:w-auto"
+                          className="flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 w-full sm:w-auto text-sm font-semibold"
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve Teacher Stage
+                          Approve — Teacher Stage
                         </button>
                       )}
-                      {ticket.status === 'pending_faculty' && (
+                      {ticket.status === 'pending_teacher' && !isTeachingStaff && !isAdminRole && (
+                        <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg font-medium">
+                          Awaiting teacher approval
+                        </span>
+                      )}
+
+                      {/* Stage 2 — only faculty coordinator can approve */}
+                      {ticket.status === 'pending_faculty' && (isFacultyOverseer || isAdminRole) && (
                         <button
                           onClick={async () => {
                             if (!onUpdate) return;
@@ -236,13 +255,20 @@ const TicketDetails = ({
                             setLoading(false);
                           }}
                           disabled={loading}
-                          className="flex items-center px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 w-full sm:w-auto"
+                          className="flex items-center px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 w-full sm:w-auto text-sm font-semibold"
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve Overseer Stage
+                          Approve — Faculty Stage
                         </button>
                       )}
-                      {ticket.status === 'pending_hod' && (
+                      {ticket.status === 'pending_faculty' && !isFacultyOverseer && !isAdminRole && (
+                        <span className="text-xs text-purple-700 bg-purple-50 border border-purple-200 px-3 py-2 rounded-lg font-medium">
+                          Awaiting faculty coordinator approval
+                        </span>
+                      )}
+
+                      {/* Stage 3 — only HOD can resolve */}
+                      {ticket.status === 'pending_hod' && (isHOD || isAdminRole) && (
                         <button
                           onClick={async () => {
                             if (!onUpdate) return;
@@ -251,40 +277,29 @@ const TicketDetails = ({
                             setLoading(false);
                           }}
                           disabled={loading}
-                          className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 w-full sm:w-auto"
+                          className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 w-full sm:w-auto text-sm font-semibold"
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
-                          Resolve (HOD Review)
+                          Resolve — HOD Final Approval
                         </button>
                       )}
-                      {ticket.status === 'open' && (
-                        <button
-                          onClick={async () => {
-                            if (!onUpdate) return;
-                            setLoading(true);
-                            try { await onUpdate(ticket._id, { status: 'pending_teacher' }); } catch (e) {}
-                            setLoading(false);
-                          }}
-                          disabled={loading}
-                          className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 w-full sm:w-auto"
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Start Approval Chain
-                        </button>
+                      {ticket.status === 'pending_hod' && !isHOD && !isAdminRole && (
+                        <span className="text-xs text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg font-medium">
+                          Awaiting HOD approval
+                        </span>
                       )}
                     </>
                   ) : (
+                    /* Non-attendance ticket — any faculty/admin/hod can resolve */
                     <button
                       onClick={async () => {
                         if (!onUpdate) return;
                         setLoading(true);
-                        try {
-                          await onUpdate(ticket._id, { status: 'resolved' });
-                        } catch (e) {}
+                        try { await onUpdate(ticket._id, { status: 'resolved' }); } catch (e) {}
                         setLoading(false);
                       }}
                       disabled={loading}
-                      className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 w-full sm:w-auto"
+                      className="flex items-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 w-full sm:w-auto text-sm font-semibold"
                     >
                       <CheckCircle className="h-4 w-4 mr-1" />
                       Resolve
@@ -441,6 +456,77 @@ const TicketDetails = ({
             </div>
           )}
         </div>
+        {/* Attendance Approval Chain Progress */}
+        {ticket.isAttendanceIssue && (
+          <div className="mb-6 p-5 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+              <h3 className="text-sm font-bold text-indigo-800 uppercase tracking-wider">Attendance Approval Chain</h3>
+            </div>
+            <div className="flex items-center gap-0">
+              {[
+                {
+                  label: 'Teacher',
+                  sublabel: 'Stage 1',
+                  done: ['pending_faculty','pending_hod','resolved','closed'].includes(ticket.status),
+                  active: ticket.status === 'pending_teacher',
+                  approval: ticket.approvalChain?.teacherApproval,
+                  color: 'indigo'
+                },
+                {
+                  label: 'Faculty',
+                  sublabel: 'Stage 2',
+                  done: ['pending_hod','resolved','closed'].includes(ticket.status),
+                  active: ticket.status === 'pending_faculty',
+                  approval: ticket.approvalChain?.facultyApproval,
+                  color: 'purple'
+                },
+                {
+                  label: 'HOD',
+                  sublabel: 'Stage 3',
+                  done: ['resolved','closed'].includes(ticket.status),
+                  active: ticket.status === 'pending_hod',
+                  approval: ticket.approvalChain?.hodApproval,
+                  color: 'green'
+                }
+              ].map((step, idx) => (
+                <React.Fragment key={step.label}>
+                  <div className="flex flex-col items-center flex-1">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black border-2 transition-all ${
+                      step.done
+                        ? 'bg-green-500 border-green-500 text-white'
+                        : step.active
+                        ? 'bg-white border-indigo-500 text-indigo-600 shadow-[0_0_0_4px_rgba(99,102,241,0.15)]'
+                        : 'bg-white border-gray-200 text-gray-400'
+                    }`}>
+                      {step.done ? <CheckCircle className="w-5 h-5" /> : idx + 1}
+                    </div>
+                    <div className="mt-2 text-center">
+                      <p className={`text-xs font-bold ${step.done ? 'text-green-700' : step.active ? 'text-indigo-700' : 'text-gray-400'}`}>
+                        {step.label}
+                      </p>
+                      <p className="text-[10px] text-gray-400">{step.sublabel}</p>
+                      {step.done && step.approval?.approvedAt && (
+                        <p className="text-[10px] text-green-600 mt-0.5">
+                          {new Date(step.approval.approvedAt).toLocaleDateString()}
+                        </p>
+                      )}
+                      {step.active && (
+                        <p className="text-[10px] text-indigo-500 font-semibold mt-0.5">Pending</p>
+                      )}
+                    </div>
+                  </div>
+                  {idx < 2 && (
+                    <div className={`h-0.5 flex-1 mx-1 mb-6 rounded-full transition-all ${
+                      step.done ? 'bg-green-400' : 'bg-gray-200'
+                    }`} />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Description */}
         <div className="mb-6">
           <h3 className="text-lg font-medium text-gray-900 mb-3">Description</h3>
