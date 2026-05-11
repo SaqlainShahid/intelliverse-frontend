@@ -8,7 +8,10 @@ const ProfileDropdown = ({ onClose, onLogout }) => {
   const navigate = useNavigate();
   const isAdmin = user?.role === 'admin';
   const name = user?.profile?.displayName || `${user?.profile?.firstName || ''} ${user?.profile?.lastName || ''}`;
-  const role = (user?.role || '').toUpperCase();
+  const designation = user?.profile?.designation;
+  const role = user?.role === 'faculty' && designation
+    ? designation
+    : (user?.role || '').toUpperCase();
 
   const menuItems = [
     { label: 'View Profile', icon: User, path: '/profile', color: 'text-gray-600' },
@@ -25,7 +28,7 @@ const ProfileDropdown = ({ onClose, onLogout }) => {
                 <img src={user.profile.avatar} alt="Profile" className="h-full w-full object-cover" />
             ) : (
                 <span className={`font-black text-xl ${isAdmin ? 'text-rose-600' : 'text-indigo-600'}`}>
-                    {(user?.profile?.firstName?.[0] || name?.[0] || 'U').toUpperCase()}
+                    {(name?.[0] || 'U').toUpperCase()}
                 </span>
             )}
           </div>

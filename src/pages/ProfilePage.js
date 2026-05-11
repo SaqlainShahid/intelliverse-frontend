@@ -112,7 +112,9 @@ const ProfilePage = () => {
     }
   };
 
-  const roleLabel = (user?.role || 'User').toUpperCase();
+  const roleLabel = user?.role === 'faculty' && user?.profile?.designation
+    ? user.profile.designation
+    : (user?.role || 'User').toUpperCase();
 
   return (
     <div className="min-h-screen bg-iv-bg text-iv-text font-sans relative overflow-hidden">

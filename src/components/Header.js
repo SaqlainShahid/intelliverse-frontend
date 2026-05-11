@@ -47,7 +47,9 @@ const Header = () => {
     return `${fn.charAt(0)}${ln.charAt(0)}`.toUpperCase();
   })();
 
-  const roleLabel = (user?.role || '').toUpperCase();
+  const roleLabel = user?.role === 'faculty' && user?.profile?.designation
+    ? user.profile.designation
+    : (user?.role || '').toUpperCase();
 
   const handleLogout = async () => {
     try { await logout(); } catch {}

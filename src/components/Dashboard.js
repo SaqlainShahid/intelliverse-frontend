@@ -231,7 +231,7 @@ const Dashboard = () => {
 
               <div>
                 <h2 className="text-2xl font-bold text-iv-text flex items-center gap-2">
-                  Welcome back, {user?.profile?.firstName} <span className="animate-wave inline-block origin-[70%_70%]">👋</span>
+                  Welcome back, {user?.profile?.displayName || user?.profile?.firstName} <span className="animate-wave inline-block origin-[70%_70%]">👋</span>
                 </h2>
                 <p className="text-iv-muted font-medium mt-1">
                   Your AI-powered campus assistant is ready. Access your tools below.
@@ -253,16 +253,16 @@ const Dashboard = () => {
                   <img src={user.profile.avatar} alt="Profile" className="h-full w-full object-cover" />
                 ) : (
                   <span className="text-sm font-bold">
-                    {user?.profile?.firstName?.charAt(0)}{user?.profile?.lastName?.charAt(0)}
+                    {(user?.profile?.displayName || user?.profile?.firstName || '?').charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               <div className="flex flex-col">
                 <span className="text-base font-bold text-iv-text">
-                  {user?.profile?.firstName}
+                  {user?.profile?.displayName || user?.profile?.firstName}
                 </span>
                 <span className="text-xs font-semibold text-iv-indigo uppercase tracking-wider bg-iv-indigo/10 px-2 py-0.5 rounded-full w-fit mt-0.5">
-                  {user?.role}
+                  {user?.role === 'faculty' && user?.profile?.designation ? user.profile.designation : user?.role}
                 </span>
               </div>
             </GlassCard>
