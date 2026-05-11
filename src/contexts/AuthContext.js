@@ -71,24 +71,26 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       if (authService.isAuthenticated()) {
+        // Show cached user immediately so UI doesn't flicker
         const storedUser = authService.getStoredUser();
         if (storedUser) {
           dispatch({ type: actionTypes.SET_USER, payload: storedUser });
-          return;
         }
-
-        // Verify token with backend
+        // Always fetch latest profile from backend (picks up designation/role changes by admin)
         const result = await authService.getCurrentUser();
         if (result.success) {
+          localStorage.setItem('user', JSON.stringify(result.data.user));
           dispatch({ type: actionTypes.SET_USER, payload: result.data.user });
-        } else {
+        } else if (!storedUser) {
           dispatch({ type: actionTypes.LOGOUT });
         }
       } else {
         dispatch({ type: actionTypes.SET_LOADING, payload: false });
       }
     } catch (error) {
-      dispatch({ type: actionTypes.LOGOUT });
+      const storedUser = authService.getStoredUser();
+      if (!storedUser) dispatch({ type: actionTypes.LOGOUT });
+      else dispatch({ type: actionTypes.SET_LOADING, payload: false });
     }
   };
 
