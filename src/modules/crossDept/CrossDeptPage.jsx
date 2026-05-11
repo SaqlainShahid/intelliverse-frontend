@@ -870,10 +870,12 @@ export default function CrossDeptPage() {
               <input value={forumSearchInput} onChange={e => setForumSearchInput(e.target.value)} placeholder="Search questions…"
                 className="w-full pl-9 pr-4 py-2.5 rounded-2xl border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all" />
             </div>
-            <button onClick={() => setShowAskModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm flex-shrink-0">
-              <Plus className="w-4 h-4" /> Ask Question
-            </button>
+            {user?.role === 'student' && (
+              <button onClick={() => setShowAskModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm flex-shrink-0">
+                <Plus className="w-4 h-4" /> Ask Question
+              </button>
+            )}
           </div>
 
           {/* Category chips */}
@@ -1205,7 +1207,7 @@ export default function CrossDeptPage() {
       onClose={() => { setRequestModalOpen(false); setSelectedUser(null); }}
       onSuccess={() => { toast.success('Chat request sent!'); setRequestModalOpen(false); setSelectedUser(null); }}
     />
-    {showAskModal && (
+    {showAskModal && user?.role === 'student' && (
       <AskQuestionModal
         onClose={() => setShowAskModal(false)}
         onCreated={() => { setShowAskModal(false); loadForum(); }}
