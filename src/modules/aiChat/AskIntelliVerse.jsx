@@ -1,20 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, Clock, CheckCircle, AlertTriangle, ArrowRight, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Clock, CheckCircle, AlertTriangle, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 import { sendAiQuery, getMyQueries } from '../../services/aiService';
 import { getSocket } from '../../services/socket';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
 const AskIntelliVerse = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const isStudent = user?.role === 'student';
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
+    if (!isStudent) {
+      navigate('/department-dashboard', { replace: true });
+    }
+  }, [isStudent, navigate]);
+
+  useEffect(() => {
     loadHistory();
-    
+
     const socket = getSocket();
     if (socket) {
         socket.on('query:update', (updatedQuery) => {
@@ -213,25 +222,37 @@ const AskIntelliVerse = () => {
       </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-white border-t border-gray-100">
-        <form onSubmit={handleSend} className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about exams, fees, hostel, etc..."
-            className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-iv-indigo/20 focus:border-iv-indigo transition-all"
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="p-3 bg-iv-indigo text-white rounded-xl hover:bg-iv-indigo/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-iv-indigo/20"
-          >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-          </button>
-        </form>
-      </div>
+      {isStudent ? (
+        <div className="p-4 bg-white border-t border-gray-100">
+          <form onSubmit={handleSend} className="flex gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask about exams, fees, hostel, etc..."
+              className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-iv-indigo/20 focus:border-iv-indigo transition-all"
+              disabled={loading}
+            />
+            <button
+              type="submit"
+              disabled={loading || !input.trim()}
+              className="p-3 bg-iv-indigo text-white rounded-xl hover:bg-iv-indigo/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-iv-indigo/20"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div className="p-4 bg-amber-50 border-t border-amber-100 flex items-center gap-3">
+          <ShieldCheck className="w-5 h-5 text-amber-600 shrink-0" />
+          <p className="text-sm text-amber-700 font-medium">
+            Supervisor mode — you can view student queries but cannot submit new ones.
+            <button onClick={() => navigate('/department-dashboard')} className="ml-2 underline font-bold hover:text-amber-900">
+              Go to Department Dashboard →
+            </button>
+          </p>
+        </div>
+      )}
     </div>
   );
 };
