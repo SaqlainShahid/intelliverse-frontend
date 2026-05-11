@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { getForumPosts, upvoteForumPost } from '../../services/forumService';
 import AskQuestionModal from './AskQuestionModal';
 import { getSocket } from '../../services/socket';
+import { useAuth } from '../../contexts/AuthContext';
 
 const CATEGORIES = ['All', 'Academic', 'Campus Life', 'Finance', 'Career', 'Events', 'Housing', 'Other'];
 
@@ -105,6 +106,8 @@ function PostCard({ post, onUpvote, onClick }) {
 
 export default function ForumPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isStudent = user?.role === 'student';
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState('All');
@@ -181,12 +184,14 @@ export default function ForumPage() {
           <h1 className="text-2xl font-bold text-slate-900">University Forum</h1>
           <p className="text-slate-500 text-sm mt-0.5">Ask anything — anyone in the university can answer</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm flex-shrink-0"
-        >
-          <Plus className="w-4 h-4" /> Ask Question
-        </button>
+        {isStudent && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm flex-shrink-0"
+          >
+            <Plus className="w-4 h-4" /> Ask Question
+          </button>
+        )}
       </div>
 
       {/* Search */}
@@ -272,7 +277,7 @@ export default function ForumPage() {
         )}
       </div>
 
-      {showModal && (
+      {showModal && isStudent && (
         <AskQuestionModal
           onClose={() => setShowModal(false)}
           onCreated={() => setShowModal(false)}

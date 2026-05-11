@@ -291,26 +291,32 @@ export default function ForumThread() {
         )}
       </div>
 
-      {/* Answer input */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-        <h3 className="text-sm font-bold text-slate-700">Your Answer</h3>
-        <form onSubmit={handlePostAnswer} className="space-y-3">
-          <textarea
-            value={answerBody}
-            onChange={e => setAnswerBody(e.target.value)}
-            placeholder="Share what you know…"
-            rows={4}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all resize-none"
-          />
-          <div className="flex justify-end">
-            <button type="submit" disabled={submitting || !answerBody.trim()}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
-              <Send className="w-4 h-4" />
-              {submitting ? 'Posting…' : 'Post Answer'}
-            </button>
-          </div>
-        </form>
-      </div>
+      {/* Answer input — students only */}
+      {user?.role === 'student' ? (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+          <h3 className="text-sm font-bold text-slate-700">Your Answer</h3>
+          <form onSubmit={handlePostAnswer} className="space-y-3">
+            <textarea
+              value={answerBody}
+              onChange={e => setAnswerBody(e.target.value)}
+              placeholder="Share what you know…"
+              rows={4}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all resize-none"
+            />
+            <div className="flex justify-end">
+              <button type="submit" disabled={submitting || !answerBody.trim()}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors">
+                <Send className="w-4 h-4" />
+                {submitting ? 'Posting…' : 'Post Answer'}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        <div className="bg-slate-50 rounded-2xl border border-slate-100 p-5 text-center text-sm text-slate-400">
+          This forum is for students only. You are viewing in read-only mode.
+        </div>
+      )}
     </div>
   );
 }
