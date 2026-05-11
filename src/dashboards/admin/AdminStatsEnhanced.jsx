@@ -39,7 +39,21 @@ const AdminStatsEnhanced = () => {
   const [moduleUsageData, setModuleUsageData] = useState([]);
   const [userFilterRole, setUserFilterRole] = useState('');
   const [userFilterStatus, setUserFilterStatus] = useState('');
-  
+  const [editingDesignation, setEditingDesignation] = useState(null); // { id, value }
+
+  const DESIGNATION_OPTIONS = ['Lecturer','Senior Lecturer','Assistant Professor','Associate Professor','Professor','Visiting Lecturer','Lab Engineer','Instructor','Coordinator','Program Coordinator','HOD'];
+
+  const handleUpdateDesignation = async (userId, designation) => {
+    try {
+      await api.put(`/auth/admin/users/${userId}/designation`, { designation });
+      toast.success('Designation updated');
+      setEditingDesignation(null);
+      setUsersData(prev => prev.map(u => u._id === userId ? { ...u, profile: { ...u.profile, designation } } : u));
+    } catch (e) {
+      toast.error('Failed to update designation');
+    }
+  };
+
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({
@@ -1036,6 +1050,7 @@ const AdminStatsEnhanced = () => {
                     <tr className="border-b-2 border-rose-100 bg-rose-50/30">
                       <th className="pb-6 pl-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Identified User</th>
                       <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Department</th>
+                      <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden lg:table-cell">Designation</th>
                       <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Access Privilege</th>
                       <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden lg:table-cell">Network Status</th>
                       <th className="pb-6 text-right pr-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Control Actions</th>
@@ -1067,6 +1082,38 @@ const AdminStatsEnhanced = () => {
                              <span className="bg-gray-100 text-gray-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
                                 {user.profile.department || 'GLOBAL'}
                              </span>
+                          </td>
+                          <td className="py-6 hidden lg:table-cell">
+                            {user.role === 'faculty' ? (
+                              editingDesignation?.id === user._id ? (
+                                <div className="flex items-center gap-1">
+                                  <select
+                                    value={editingDesignation.value}
+                                    onChange={e => setEditingDesignation(prev => ({ ...prev, value: e.target.value }))}
+                                    className="text-[10px] border border-indigo-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                    autoFocus
+                                  >
+                                    <option value="">— None —</option>
+                                    {DESIGNATION_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                                  </select>
+                                  <button onClick={() => handleUpdateDesignation(user._id, editingDesignation.value)} className="text-[10px] px-2 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">✓</button>
+                                  <button onClick={() => setEditingDesignation(null)} className="text-[10px] px-2 py-1 border rounded-lg text-gray-400 hover:bg-gray-50">✕</button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setEditingDesignation({ id: user._id, value: user.profile?.designation || '' })}
+                                  className="flex items-center gap-1.5 group/desg"
+                                  title="Click to edit designation"
+                                >
+                                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${user.profile?.designation ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-50 text-gray-400 italic'}`}>
+                                    {user.profile?.designation || 'Not set'}
+                                  </span>
+                                  <span className="text-gray-300 group-hover/desg:text-indigo-400 text-[10px]">✏</span>
+                                </button>
+                              )
+                            ) : (
+                              <span className="text-[10px] text-gray-300">—</span>
+                            )}
                           </td>
                           <td className="py-6 hidden sm:table-cell">
                             <select
