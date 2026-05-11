@@ -14,6 +14,20 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const DESIGNATION_OPTIONS = [
+  'Lecturer',
+  'Senior Lecturer',
+  'Assistant Professor',
+  'Associate Professor',
+  'Professor',
+  'Visiting Lecturer',
+  'Lab Engineer',
+  'Instructor',
+  'Coordinator',
+  'Program Coordinator',
+  'HOD',
+];
+
 const FacultyManagement = () => {
   const [faculty, setFaculty] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +36,8 @@ const FacultyManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showActions, setShowActions] = useState({});
+  const [editingDesignation, setEditingDesignation] = useState(null); // { id, value }
+  const [savingDesignation, setSavingDesignation] = useState(false);
 
   useEffect(() => {
     loadFaculty();
@@ -39,7 +55,7 @@ const FacultyManagement = () => {
 
       if (searchTerm) params.append('search', searchTerm);
 
-      const response = await fetch(`http://localhost:5000/api/auth/admin/users?${params}`, {
+      const response = await fetch(`/api/auth/admin/users?${params}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
           'Content-Type': 'application/json'
@@ -63,7 +79,7 @@ const FacultyManagement = () => {
 
   const handleStatusToggle = async (facultyId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/admin/users/${facultyId}/status`, {
+      const response = await fetch(`/api/auth/admin/users/${facultyId}/status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -90,7 +106,7 @@ const FacultyManagement = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/admin/users/${facultyId}`, {
+      const response = await fetch(`/api/auth/admin/users/${facultyId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -108,6 +124,32 @@ const FacultyManagement = () => {
     } catch (error) {
       console.error('Error deleting faculty member:', error);
       toast.error('Error deleting faculty member');
+    }
+  };
+
+  const handleUpdateDesignation = async (facultyId, designation) => {
+    setSavingDesignation(true);
+    try {
+      const response = await fetch(`/api/auth/admin/users/${facultyId}/designation`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ designation })
+      });
+      if (response.ok) {
+        toast.success('Designation updated');
+        setEditingDesignation(null);
+        loadFaculty();
+      } else {
+        const err = await response.json();
+        toast.error(err.message || 'Failed to update designation');
+      }
+    } catch (e) {
+      toast.error('Error updating designation');
+    } finally {
+      setSavingDesignation(false);
     }
   };
 
@@ -208,8 +250,18 @@ const FacultyManagement = () => {
                   </button>
                   
                   {showActions[member._id] && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
+                    <div className="absolute right-0 mt-2 w-52 bg-white rounded-md shadow-lg z-10 border">
                       <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setEditingDesignation({ id: member._id, value: member.profile?.designation || '' });
+                            setShowActions(prev => ({ ...prev, [member._id]: false }));
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-indigo-700"
+                        >
+                          <Briefcase className="inline h-4 w-4 mr-2" />
+                          Edit Designation
+                        </button>
                         <button
                           onClick={() => {
                             handleStatusToggle(member._id);
@@ -218,15 +270,9 @@ const FacultyManagement = () => {
                           className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
                         >
                           {member.isActive ? (
-                            <>
-                              <UserX className="inline h-4 w-4 mr-2" />
-                              Deactivate
-                            </>
+                            <><UserX className="inline h-4 w-4 mr-2" />Deactivate</>
                           ) : (
-                            <>
-                              <UserCheck className="inline h-4 w-4 mr-2" />
-                              Activate
-                            </>
+                            <><UserCheck className="inline h-4 w-4 mr-2" />Activate</>
                           )}
                         </button>
                         <button
@@ -236,8 +282,7 @@ const FacultyManagement = () => {
                           }}
                           className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
                         >
-                          <Trash2 className="inline h-4 w-4 mr-2" />
-                          Delete
+                          <Trash2 className="inline h-4 w-4 mr-2" />Delete
                         </button>
                       </div>
                     </div>
@@ -257,14 +302,40 @@ const FacultyManagement = () => {
                   <span>{member.profile?.department}</span>
                 </div>
 
-                {member.profile?.designation && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Designation:</span>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getDesignationColor(member.profile.designation)}`}>
-                      {member.profile.designation}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Designation:</span>
+                  {editingDesignation?.id === member._id ? (
+                    <div className="flex items-center gap-1 ml-2 flex-1">
+                      <select
+                        value={editingDesignation.value}
+                        onChange={e => setEditingDesignation(prev => ({ ...prev, value: e.target.value }))}
+                        className="flex-1 text-xs border border-indigo-300 rounded px-1 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      >
+                        <option value="">— None —</option>
+                        {DESIGNATION_OPTIONS.map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => handleUpdateDesignation(member._id, editingDesignation.value)}
+                        disabled={savingDesignation}
+                        className="text-xs px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                      >
+                        {savingDesignation ? '...' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => setEditingDesignation(null)}
+                        className="text-xs px-2 py-1 border rounded text-gray-500 hover:bg-gray-50"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getDesignationColor(member.profile?.designation)}`}>
+                      {member.profile?.designation || <span className="text-gray-400 italic">Not set</span>}
                     </span>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {member.profile?.officeRoom && (
                   <div className="flex items-center text-sm text-gray-600">
