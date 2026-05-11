@@ -1050,7 +1050,7 @@ const AdminStatsEnhanced = () => {
                     <tr className="border-b-2 border-rose-100 bg-rose-50/30">
                       <th className="pb-6 pl-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Identified User</th>
                       <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:table-cell">Department</th>
-                      <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden lg:table-cell">Designation</th>
+                      <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Designation</th>
                       <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden sm:table-cell">Access Privilege</th>
                       <th className="pb-6 text-[10px] font-black text-gray-400 uppercase tracking-widest hidden lg:table-cell">Network Status</th>
                       <th className="pb-6 text-right pr-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Control Actions</th>
@@ -1083,7 +1083,7 @@ const AdminStatsEnhanced = () => {
                                 {user.profile.department || 'GLOBAL'}
                              </span>
                           </td>
-                          <td className="py-6 hidden lg:table-cell">
+                          <td className="py-6">
                             {user.role === 'faculty' ? (
                               editingDesignation?.id === user._id ? (
                                 <div className="flex items-center gap-1">
