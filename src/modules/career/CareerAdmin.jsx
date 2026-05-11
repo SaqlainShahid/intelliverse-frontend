@@ -35,7 +35,7 @@ export default function CareerAdmin() {
   const [appInternshipId, setAppInternshipId] = useState('');
   const [savingAppId, setSavingAppId] = useState('');
 
-  const canApprove = user?.role === 'admin' || user?.role === 'faculty' || user?.role === 'hod';
+  const canApprove = user?.role === 'admin' || user?.role === 'hod';
 
   const internshipParams = useMemo(() => {
     const p = {};
