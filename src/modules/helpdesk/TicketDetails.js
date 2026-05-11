@@ -165,7 +165,9 @@ const TicketDetails = ({
 
   // Attendance approval chain role detection
   const designation = (user?.profile?.designation || '').toLowerCase();
-  const teachingKeywords = ['teacher', 'lecturer', 'professor', 'instructor', 'visiting', 'lab engineer'];
+  // Include common typos/variants (e.g. "Leacturer" for "Lecturer")
+  const teachingKeywords = ['teacher', 'lecturer', 'leacturer', 'professor', 'prof', 'instructor', 'visiting', 'lab engineer'];
+  // Must have an EXPLICIT teaching keyword — no fallback for empty designation
   const isTeachingStaff = user?.role === 'faculty' && teachingKeywords.some(k => designation.includes(k));
   const isFacultyOverseer = user?.role === 'faculty' && designation.includes('coordinator');
   const isHOD = user?.role === 'hod' || (user?.role === 'faculty' && (designation.includes('hod') || designation.includes('head of department')));
