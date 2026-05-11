@@ -93,14 +93,14 @@ const TicketDetails = ({
 
   React.useEffect(() => {
     const loadAssignable = async () => {
-      if (!isAdminView) return;
+      if (!isAdminView || user?.role === 'hod') return;
       const res = await authService.listUsers({ role: 'faculty', page: 1, limit: 50 });
       if (res.success) {
         setAssignableUsers(res.data.users || []);
       }
     };
     loadAssignable();
-  }, [isAdminView]);
+  }, [isAdminView, user?.role]);
 
   const handleSave = async () => {
     setLoading(true);
