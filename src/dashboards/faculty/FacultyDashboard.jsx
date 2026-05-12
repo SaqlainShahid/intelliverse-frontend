@@ -20,7 +20,10 @@ import {
   X,
   Share2,
   Upload,
-  Link
+  Link,
+  Package,
+  Check,
+  AlertCircle
 } from 'lucide-react';
 import { getTheme } from '../../styles/theme';
 import logo from '../../logo-intelliverse-transparent.png.png';
@@ -33,6 +36,9 @@ const FacultyDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
+  const [pendingLostItems, setPendingLostItems] = useState([]);
+  const [approvingId, setApprovingId] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null);
   
   // Modal states
   const [showDeployModal, setShowDeployModal] = useState(false);
@@ -54,6 +60,14 @@ const FacultyDashboard = () => {
 
       const studentsRes = await api.get('/faculty/students').catch(() => ({ data: { data: [] } }));
       setStudents(studentsRes.data.data || []);
+
+      // Load pending lost items for coordinator approval
+      try {
+        const itemsRes = await api.get('/lost-found/?approvalStatus=pending&status=lost');
+        setPendingLostItems(itemsRes.data.data?.items || []);
+      } catch (err) {
+        console.log('Lost & Found not available for this user');
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -87,6 +101,36 @@ const FacultyDashboard = () => {
       icon: '📋',
       style: { borderRadius: '1rem', background: '#333', color: '#fff' }
     });
+  };
+
+  const handleApproveItem = async (itemId) => {
+    setApprovingId(itemId);
+    try {
+      const res = await api.patch(`/lost-found/${itemId}/approval`, { approvalStatus: 'approved' });
+      if (res.data.success) {
+        toast.success('Item approved successfully!');
+        setPendingLostItems(prev => prev.filter(item => item._id !== itemId));
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to approve item');
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const handleRejectItem = async (itemId) => {
+    setRejectingId(itemId);
+    try {
+      const res = await api.patch(`/lost-found/${itemId}/approval`, { approvalStatus: 'rejected' });
+      if (res.data.success) {
+        toast.success('Item rejected successfully!');
+        setPendingLostItems(prev => prev.filter(item => item._id !== itemId));
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to reject item');
+    } finally {
+      setRejectingId(null);
+    }
   };
 
   if (loading) {
@@ -320,6 +364,74 @@ const FacultyDashboard = () => {
                  </table>
                </div>
             </div>
+
+            {/* ── Lost & Found Approval ── */}
+            {pendingLostItems.length > 0 && (
+              <div id="lost-found-approval" className="bg-white/40 backdrop-blur-[50px] border border-white/60 rounded-[3.5rem] shadow-2xl overflow-hidden">
+                 <div className="px-10 py-8 border-b border-white/40 bg-white/20 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                       <div className={`p-3 rounded-2xl bg-orange-50 text-orange-600`}>
+                          <Package size={24} />
+                       </div>
+                       <div>
+                         <h2 className="text-sm font-black uppercase tracking-[0.2em] text-gray-900">Pending Approvals</h2>
+                         <p className="text-[10px] text-gray-400 font-bold mt-1">{pendingLostItems.length} item{pendingLostItems.length !== 1 ? 's' : ''} awaiting review</p>
+                       </div>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                      <AlertCircle size={20} className="text-orange-600 animate-pulse" />
+                    </div>
+                 </div>
+                 <div className="divide-y divide-white/20 max-h-[600px] overflow-y-auto">
+                    {pendingLostItems.map((item) => (
+                      <div key={item._id} className="p-8 hover:bg-white/20 transition-colors group">
+                        <div className="flex items-start gap-6 mb-6">
+                          {item.imageUrl && (
+                            <img 
+                              src={item.imageUrl.startsWith('http') ? item.imageUrl : `http://localhost:5000${item.imageUrl}`}
+                              alt={item.itemName}
+                              className="w-24 h-24 rounded-2xl object-cover bg-gray-100"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <h3 className="text-sm font-black text-gray-900 mb-1">{item.itemName}</h3>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                  Reported by: {item.reportedBy?.profile?.firstName} {item.reportedBy?.profile?.lastName}
+                                </p>
+                              </div>
+                              <span className="px-3 py-1 rounded-lg bg-orange-100 text-orange-700 text-[9px] font-black">PENDING</span>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-2 line-clamp-2">{item.description}</p>
+                            {item.location && (
+                              <p className="text-[10px] text-gray-400 font-bold mt-2">📍 {item.location}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-3 pt-4 border-t border-gray-200">
+                          <button
+                            onClick={() => handleApproveItem(item._id)}
+                            disabled={approvingId === item._id || rejectingId === item._id}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 disabled:opacity-50 font-bold text-sm transition-all"
+                          >
+                            <Check size={16} />
+                            {approvingId === item._id ? 'Approving...' : 'Approve'}
+                          </button>
+                          <button
+                            onClick={() => handleRejectItem(item._id)}
+                            disabled={approvingId === item._id || rejectingId === item._id}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-50 font-bold text-sm transition-all"
+                          >
+                            <X size={16} />
+                            {rejectingId === item._id ? 'Rejecting...' : 'Reject'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+            )}
           </div>
 
           {/* ── Right Panel ── */}
