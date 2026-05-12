@@ -56,9 +56,8 @@ function ChatItem({ c, accent, activeChatId, presence, typingState, currentUserI
     <div onContextMenu={(e) => onContextMenu(e, c)} className="relative">
       <button
         onClick={() => onSelect(c)}
-        className={`w-full px-3 py-2.5 rounded-2xl transition-all duration-200 flex items-center gap-3 text-left border ${
-          active ? 'border-violet-300/40 -translate-y-0.5' : 'border-transparent hover:border-violet-100/60 hover:-translate-y-0.5'
-        }`}
+        className={`w-full px-3 py-2.5 rounded-2xl transition-all duration-200 flex items-center gap-3 text-left border ${active ? 'border-violet-300/40 -translate-y-0.5' : 'border-transparent hover:border-violet-100/60 hover:-translate-y-0.5'
+          }`}
         style={active ? {
           background: 'linear-gradient(135deg, rgba(124,58,237,0.92) 0%, rgba(99,102,241,0.88) 100%)',
           boxShadow: '0 4px 12px rgba(124,58,237,0.3), 0 8px 32px rgba(99,102,241,0.2), inset 0 1px 0 rgba(255,255,255,0.15)',
@@ -72,16 +71,15 @@ function ChatItem({ c, accent, activeChatId, presence, typingState, currentUserI
             {other?.profile?.avatar ? (
               <img src={other.profile.avatar} alt="" className="h-full w-full object-cover" />
             ) : (
-              <div className={`w-full h-full flex items-center justify-center text-[14px] font-bold ${
-                active ? 'bg-white/20 text-white' : (
+              <div className={`w-full h-full flex items-center justify-center text-[14px] font-bold ${active ? 'bg-white/20 text-white' : (
                   isAnnouncement ? 'bg-rose-500 text-white' :
-                  c.category === 'collaboration' ? 'bg-amber-500 text-white' :
-                  'bg-gradient-to-br from-violet-400 to-indigo-500 text-white'
+                    c.category === 'collaboration' ? 'bg-amber-500 text-white' :
+                      'bg-gradient-to-br from-violet-400 to-indigo-500 text-white'
                 )
-              }`}>
+                }`}>
                 {isAnnouncement ? <Megaphone className="w-4 h-4" /> :
-                 c.category === 'collaboration' ? <Handshake className="w-4 h-4" /> :
-                 initial}
+                  c.category === 'collaboration' ? <Handshake className="w-4 h-4" /> :
+                    initial}
               </div>
             )}
           </div>
@@ -112,9 +110,8 @@ function ChatItem({ c, accent, activeChatId, presence, typingState, currentUserI
             <div className="flex items-center gap-1.5 shrink-0">
               {isMuted && <VolumeX size={11} className={active ? 'text-white/60' : 'text-gray-400'} />}
               {c.unreadCount > 0 && (
-                <span className={`h-5 min-w-[1.25rem] px-1.5 rounded-lg text-[9px] font-black flex items-center justify-center shadow-sm ${
-                  active ? 'bg-white text-violet-600' : `${accent.badge} text-white`
-                }`}>
+                <span className={`h-5 min-w-[1.25rem] px-1.5 rounded-lg text-[9px] font-black flex items-center justify-center shadow-sm ${active ? 'bg-white text-violet-600' : `${accent.badge} text-white`
+                  }`}>
                   {c.unreadCount}
                 </span>
               )}

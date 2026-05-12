@@ -63,10 +63,10 @@ export default function ChatPage() {
         const token = getAccessToken();
         if (!token || !user?._id) return;
         const [resChats, resArchived, resMuted, resPending] = await Promise.all([
-            getChats(),
-            getArchivedChats(),
-            getMutedUsers(),
-            getPendingRequests()
+          getChats(),
+          getArchivedChats(),
+          getMutedUsers(),
+          getPendingRequests()
         ]);
         if (resChats?.success) setChats(resChats.data);
         if (resArchived?.success) setArchivedIds(new Set(resArchived.data));
@@ -87,7 +87,7 @@ export default function ChatPage() {
   }, [routeChatId, chats]);
 
   const currentUserId = user?._id;
-  
+
   const displayedChats = useMemo(() => {
     return chats.filter(c => showArchived ? archivedIds.has(c._id) : !archivedIds.has(c._id));
   }, [chats, showArchived, archivedIds]);
@@ -100,55 +100,55 @@ export default function ChatPage() {
   }, [chats, activeChatId, cachedActiveChat]);
 
   const handleArchive = async (chatId) => {
-      try {
-        const res = await archiveChat(chatId);
-        if(res.success) {
-            setArchivedIds(prev => new Set([...prev, chatId]));
-            if (activeChatId === chatId) setActiveChatId(null);
-            toast.success('Chat archived');
-        }
-      } catch { toast.error('Failed to archive chat'); }
+    try {
+      const res = await archiveChat(chatId);
+      if (res.success) {
+        setArchivedIds(prev => new Set([...prev, chatId]));
+        if (activeChatId === chatId) setActiveChatId(null);
+        toast.success('Chat archived');
+      }
+    } catch { toast.error('Failed to archive chat'); }
   };
 
   const handleUnarchive = async (chatId) => {
-      try {
-        const res = await unarchiveChat(chatId);
-        if(res.success) {
-            setArchivedIds(prev => {
-                const next = new Set(prev);
-                next.delete(chatId);
-                return next;
-            });
-            toast.success('Chat unarchived');
-        }
-      } catch { toast.error('Failed to unarchive chat'); }
+    try {
+      const res = await unarchiveChat(chatId);
+      if (res.success) {
+        setArchivedIds(prev => {
+          const next = new Set(prev);
+          next.delete(chatId);
+          return next;
+        });
+        toast.success('Chat unarchived');
+      }
+    } catch { toast.error('Failed to unarchive chat'); }
   };
 
   const handleDelete = async (chatId) => {
-      try {
-        await deleteChat(chatId);
-        setChats(prev => prev.filter(c => c._id !== chatId));
-        if (activeChatId === chatId) setActiveChatId(null);
-        toast.success('Chat deleted');
-      } catch { toast.error('Failed to delete chat'); }
+    try {
+      await deleteChat(chatId);
+      setChats(prev => prev.filter(c => c._id !== chatId));
+      if (activeChatId === chatId) setActiveChatId(null);
+      toast.success('Chat deleted');
+    } catch { toast.error('Failed to delete chat'); }
   };
 
   const handleMuteToggle = async (targetUserId) => {
-      try {
-        if (mutedUserIds.has(targetUserId)) {
-            await unmuteUser(targetUserId);
-            setMutedUserIds(prev => {
-                const next = new Set(prev);
-                next.delete(targetUserId);
-                return next;
-            });
-            toast.success('User unmuted');
-        } else {
-            await muteUser(targetUserId);
-            setMutedUserIds(prev => new Set([...prev, targetUserId]));
-            toast.success('User muted');
-        }
-      } catch { toast.error('Failed to update mute status'); }
+    try {
+      if (mutedUserIds.has(targetUserId)) {
+        await unmuteUser(targetUserId);
+        setMutedUserIds(prev => {
+          const next = new Set(prev);
+          next.delete(targetUserId);
+          return next;
+        });
+        toast.success('User unmuted');
+      } else {
+        await muteUser(targetUserId);
+        setMutedUserIds(prev => new Set([...prev, targetUserId]));
+        toast.success('User muted');
+      }
+    } catch { toast.error('Failed to update mute status'); }
   };
 
   useEffect(() => {
@@ -157,7 +157,7 @@ export default function ChatPage() {
       try {
         const res = await getChats();
         if (res?.success) setChats(res.data);
-      } catch {}
+      } catch { }
       const name = payload?.group?.name || 'New Group';
       toast.success(`You were added to ${name}`);
       setBanner({ message: `You were added to ${name}`, chatId: payload?._id, ts: Date.now() });
@@ -178,64 +178,64 @@ export default function ChatPage() {
 
         {/* Animated morphing blobs */}
         <div style={{
-          position:'absolute', top:'-15%', right:'-8%', width:680, height:680,
-          background:'radial-gradient(circle, rgba(167,139,250,0.2) 0%, rgba(196,181,253,0.1) 40%, transparent 70%)',
-          borderRadius:'50%', filter:'blur(48px)', animation:'float1 12s ease-in-out infinite'
+          position: 'absolute', top: '-15%', right: '-8%', width: 680, height: 680,
+          background: 'radial-gradient(circle, rgba(167,139,250,0.2) 0%, rgba(196,181,253,0.1) 40%, transparent 70%)',
+          borderRadius: '50%', filter: 'blur(48px)', animation: 'float1 12s ease-in-out infinite'
         }} />
         <div style={{
-          position:'absolute', bottom:'-20%', left:'-10%', width:750, height:750,
-          background:'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(129,140,248,0.08) 40%, transparent 70%)',
-          borderRadius:'50%', filter:'blur(60px)', animation:'float2 15s ease-in-out infinite'
+          position: 'absolute', bottom: '-20%', left: '-10%', width: 750, height: 750,
+          background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(129,140,248,0.08) 40%, transparent 70%)',
+          borderRadius: '50%', filter: 'blur(60px)', animation: 'float2 15s ease-in-out infinite'
         }} />
         <div style={{
-          position:'absolute', top:'35%', left:'25%', width:450, height:450,
-          background:'radial-gradient(circle, rgba(236,72,153,0.07) 0%, rgba(251,207,232,0.05) 50%, transparent 70%)',
-          borderRadius:'50%', filter:'blur(70px)', animation:'float3 18s ease-in-out infinite'
+          position: 'absolute', top: '35%', left: '25%', width: 450, height: 450,
+          background: 'radial-gradient(circle, rgba(236,72,153,0.07) 0%, rgba(251,207,232,0.05) 50%, transparent 70%)',
+          borderRadius: '50%', filter: 'blur(70px)', animation: 'float3 18s ease-in-out infinite'
         }} />
         <div style={{
-          position:'absolute', top:'10%', left:'45%', width:320, height:320,
-          background:'radial-gradient(circle, rgba(34,211,238,0.06) 0%, transparent 70%)',
-          borderRadius:'50%', filter:'blur(50px)', animation:'float1 20s ease-in-out infinite reverse'
+          position: 'absolute', top: '10%', left: '45%', width: 320, height: 320,
+          background: 'radial-gradient(circle, rgba(34,211,238,0.06) 0%, transparent 70%)',
+          borderRadius: '50%', filter: 'blur(50px)', animation: 'float1 20s ease-in-out infinite reverse'
         }} />
 
         {/* SVG Wave Pattern Overlay */}
-        <svg style={{ position:'absolute', bottom:0, left:0, right:0, width:'100%', opacity:0.035 }} viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="rgba(139,92,246,1)" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"/>
+        <svg style={{ position: 'absolute', bottom: 0, left: 0, right: 0, width: '100%', opacity: 0.035 }} viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="rgba(139,92,246,1)" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
         </svg>
-        <svg style={{ position:'absolute', bottom:0, left:0, right:0, width:'100%', opacity:0.025 }} viewBox="0 0 1440 320" preserveAspectRatio="none">
-          <path fill="rgba(99,102,241,1)" d="M0,256L60,240C120,224,240,192,360,181.3C480,171,600,181,720,197.3C840,213,960,235,1080,224C1200,213,1320,171,1380,149.3L1440,128L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"/>
+        <svg style={{ position: 'absolute', bottom: 0, left: 0, right: 0, width: '100%', opacity: 0.025 }} viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="rgba(99,102,241,1)" d="M0,256L60,240C120,224,240,192,360,181.3C480,171,600,181,720,197.3C840,213,960,235,1080,224C1200,213,1320,171,1380,149.3L1440,128L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z" />
         </svg>
 
         {/* Floating sparkle particles */}
         {[
-          { top:'12%', left:'8%', size:4, delay:'0s', dur:'6s' },
-          { top:'30%', left:'88%', size:3, delay:'1.5s', dur:'8s' },
-          { top:'60%', left:'15%', size:5, delay:'3s', dur:'7s' },
-          { top:'75%', left:'72%', size:3, delay:'0.8s', dur:'9s' },
-          { top:'20%', left:'55%', size:4, delay:'2s', dur:'6.5s' },
-          { top:'85%', left:'40%', size:3, delay:'4s', dur:'8s' },
-          { top:'45%', left:'92%', size:4, delay:'1s', dur:'7.5s' },
+          { top: '12%', left: '8%', size: 4, delay: '0s', dur: '6s' },
+          { top: '30%', left: '88%', size: 3, delay: '1.5s', dur: '8s' },
+          { top: '60%', left: '15%', size: 5, delay: '3s', dur: '7s' },
+          { top: '75%', left: '72%', size: 3, delay: '0.8s', dur: '9s' },
+          { top: '20%', left: '55%', size: 4, delay: '2s', dur: '6.5s' },
+          { top: '85%', left: '40%', size: 3, delay: '4s', dur: '8s' },
+          { top: '45%', left: '92%', size: 4, delay: '1s', dur: '7.5s' },
         ].map((p, i) => (
           <div key={i} style={{
-            position:'absolute', top:p.top, left:p.left,
-            width:p.size, height:p.size,
-            background:'rgba(139,92,246,0.5)',
-            borderRadius:'50%',
-            animation:`sparkle ${p.dur} ${p.delay} ease-in-out infinite`,
-            boxShadow:`0 0 ${p.size * 2}px rgba(139,92,246,0.4)`,
+            position: 'absolute', top: p.top, left: p.left,
+            width: p.size, height: p.size,
+            background: 'rgba(139,92,246,0.5)',
+            borderRadius: '50%',
+            animation: `sparkle ${p.dur} ${p.delay} ease-in-out infinite`,
+            boxShadow: `0 0 ${p.size * 2}px rgba(139,92,246,0.4)`,
           }} />
         ))}
 
         {/* Fine grid overlay for depth */}
         <div style={{
-          position:'absolute', inset:0,
-          backgroundImage:'radial-gradient(circle, rgba(139,92,246,0.08) 1px, transparent 1px)',
-          backgroundSize:'36px 36px',
+          position: 'absolute', inset: 0,
+          backgroundImage: 'radial-gradient(circle, rgba(139,92,246,0.08) 1px, transparent 1px)',
+          backgroundSize: '36px 36px',
         }} />
 
         {/* Corner radial vignettes */}
-        <div style={{ position:'absolute', top:0, right:0, width:300, height:300, background:'radial-gradient(circle at top right, rgba(167,139,250,0.12), transparent 70%)' }} />
-        <div style={{ position:'absolute', bottom:0, left:0, width:300, height:300, background:'radial-gradient(circle at bottom left, rgba(99,102,241,0.1), transparent 70%)' }} />
+        <div style={{ position: 'absolute', top: 0, right: 0, width: 300, height: 300, background: 'radial-gradient(circle at top right, rgba(167,139,250,0.12), transparent 70%)' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, width: 300, height: 300, background: 'radial-gradient(circle at bottom left, rgba(99,102,241,0.1), transparent 70%)' }} />
       </div>
 
       {/* CSS Keyframes injected */}
@@ -274,30 +274,30 @@ export default function ChatPage() {
             setActiveChatId(chat._id);
             navigate(`/chat/${chat._id}`);
           }} />
-          
+
           <div className="px-4 py-3 flex items-center gap-3">
-             <button 
-               onClick={() => navigate('/chat/requests')}
-               className="group relative text-[12px] font-bold flex items-center gap-2 px-5 py-2.5 rounded-full transition-all text-white hover:shadow-lg"
-               style={{ background: 'linear-gradient(135deg, #7c3aed, #6366f1)' }}
-             >
-               <Mail size={14} />
-               <span>REQUESTS</span>
-               {pendingRequestsCount > 0 && (
-                 <span className="bg-white text-violet-600 text-[11px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center ml-1">
-                   {pendingRequestsCount > 9 ? '9+' : pendingRequestsCount}
-                 </span>
-               )}
-             </button>
-             
-             <button 
-               onClick={() => setShowArchived(!showArchived)}
-               className={`text-[12px] font-bold flex items-center gap-2 px-5 py-2.5 rounded-full transition-all border ${showArchived ? 'bg-violet-50 border-violet-200 text-violet-700' : 'bg-transparent border-gray-200 text-gray-500 hover:border-violet-300 hover:text-violet-600'}`}
-             >
-               <Archive size={14} />
-               <span>ARCHIVED</span>
-               <span className="text-violet-400">✦</span>
-             </button>
+            <button
+              onClick={() => navigate('/chat/requests')}
+              className="group relative text-[12px] font-bold flex items-center gap-2 px-5 py-2.5 rounded-full transition-all text-white hover:shadow-lg"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #6366f1)' }}
+            >
+              <Mail size={14} />
+              <span>REQUESTS</span>
+              {pendingRequestsCount > 0 && (
+                <span className="bg-white text-violet-600 text-[11px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center ml-1">
+                  {pendingRequestsCount > 9 ? '9+' : pendingRequestsCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className={`text-[12px] font-bold flex items-center gap-2 px-5 py-2.5 rounded-full transition-all border ${showArchived ? 'bg-violet-50 border-violet-200 text-violet-700' : 'bg-transparent border-gray-200 text-gray-500 hover:border-violet-300 hover:text-violet-600'}`}
+            >
+              <Archive size={14} />
+              <span>ARCHIVED</span>
+              <span className="text-violet-400">✦</span>
+            </button>
           </div>
 
           {banner && (
@@ -317,18 +317,18 @@ export default function ChatPage() {
           )}
 
           <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar py-2">
-            <ChatList 
-                chats={displayedChats} 
-                onSelect={(chat) => { setActiveChatId(chat._id); setCachedActiveChat(chat); navigate(`/chat/${chat._id}`); }} 
-                activeChatId={activeChatId} 
-                socket={socket} 
-                currentUserId={currentUserId}
-                onArchive={handleArchive}
-                onUnarchive={handleUnarchive}
-                onDelete={handleDelete}
-                onMuteToggle={handleMuteToggle}
-                mutedUserIds={mutedUserIds}
-                archivedIds={archivedIds}
+            <ChatList
+              chats={displayedChats}
+              onSelect={(chat) => { setActiveChatId(chat._id); setCachedActiveChat(chat); navigate(`/chat/${chat._id}`); }}
+              activeChatId={activeChatId}
+              socket={socket}
+              currentUserId={currentUserId}
+              onArchive={handleArchive}
+              onUnarchive={handleUnarchive}
+              onDelete={handleDelete}
+              onMuteToggle={handleMuteToggle}
+              mutedUserIds={mutedUserIds}
+              archivedIds={archivedIds}
             />
           </div>
         </div>
@@ -345,9 +345,9 @@ export default function ChatPage() {
           }}
         >
           {activeChat ? (
-            <ChatWindow 
-              chat={activeChat} 
-              socket={socket} 
+            <ChatWindow
+              chat={activeChat}
+              socket={socket}
               currentUserId={currentUserId}
               isArchived={archivedIds.has(activeChat._id)}
               onArchive={() => handleArchive(activeChat._id)}
@@ -361,19 +361,19 @@ export default function ChatPage() {
                   {/* Decorative Glowing Rings */}
                   <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full blur-2xl opacity-20 animate-pulse"></div>
                   <div className="absolute inset-4 border-2 border-dashed border-indigo-200 rounded-full animate-[spin_10s_linear_infinite]"></div>
-                  
+
                   <div className="relative z-10 h-20 w-20 rounded-[2rem] bg-white shadow-xl flex items-center justify-center text-4xl transform hover:scale-110 transition-transform duration-500 cursor-default">
                     💬
                   </div>
                 </div>
-                
+
                 <div className="space-y-3">
                   <h3 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight">Select a conversation</h3>
                   <p className="text-gray-500 font-medium text-lg max-w-xs mx-auto leading-relaxed">
                     Choose a chat from the sidebar or search for a new peer to start messaging.
                   </p>
                 </div>
-                
+
                 <div className="flex justify-center gap-3 pt-4">
                   <div className="h-2 w-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                   <div className="h-2 w-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '200ms' }} />
