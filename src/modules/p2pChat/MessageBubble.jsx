@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, CheckCheck, FileDown, Play, Pause, MoreVertical, Reply, Pin, Smile, Edit3, Trash2 } from 'lucide-react';
+import { Check, CheckCheck, FileDown, Play, Pause, MoreVertical, Reply, Pin, Smile, Edit3, Trash2, Download } from 'lucide-react';
 
 export default function MessageBubble({ message, sender, isOwn, onReply, onReact, onPin, canPin, canModerate, onEdit, onDelete, onVote }) {
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -17,6 +17,29 @@ export default function MessageBubble({ message, sender, isOwn, onReply, onReact
   };
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(message.content || '');
+
+  const handleDownload = (e, att) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    let dlUrl = att.url;
+
+    // Add fl_attachment so Cloudinary sends Content-Disposition: attachment
+    // This forces the browser to download instead of previewing in-tab
+    if (dlUrl && dlUrl.includes('cloudinary.com') && dlUrl.includes('/upload/')) {
+      const safeName = (att.filename || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
+      dlUrl = dlUrl.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
+    }
+
+    const a = document.createElement('a');
+    a.href = dlUrl;
+    a.download = att.filename || 'download';
+    a.target = '_blank';
+    a.rel = 'noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const ReactionsBar = () => {
     const grouped = (message.reactions || []).reduce((acc, r) => {
@@ -256,25 +279,49 @@ export default function MessageBubble({ message, sender, isOwn, onReply, onReact
             {!!(message.attachments && message.attachments.length) && (
               <div className="space-y-2 mb-2">
                 {message.attachments.map((att) => (
-                  <div key={att.publicId} className="rounded-2xl overflow-hidden shadow-sm">
+                  <div key={att.publicId} className="rounded-2xl overflow-hidden shadow-sm relative group/att inline-block w-full">
                     {att.kind === 'image' ? (
-                      <a href={att.url} target="_blank" rel="noreferrer" className="block hover:opacity-95 transition-opacity">
-                        <img src={att.url} alt={att.filename} className="max-h-80 max-w-full w-auto object-cover" />
-                      </a>
+                      <div className="relative">
+                        <a href={att.url} target="_blank" rel="noreferrer" className="block hover:opacity-95 transition-opacity">
+                          <img src={att.url} alt={att.filename} className="max-h-80 max-w-full w-auto object-cover" />
+                        </a>
+                        <button 
+                          onClick={(e) => handleDownload(e, att)}
+                          className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover/att:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer z-10"
+                          title="Download Image"
+                        >
+                          <Download size={16} />
+                        </button>
+                      </div>
                     ) : att.kind === 'video' ? (
-                      <video src={att.url} className="w-full max-w-md bg-black" controls />
+                      <div className="relative">
+                        <video src={att.url} className="w-full max-w-md bg-black" controls controlsList="nodownload" />
+                        <button 
+                          onClick={(e) => handleDownload(e, att)}
+                          className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover/att:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer z-10"
+                          title="Download Video"
+                        >
+                          <Download size={16} />
+                        </button>
+                      </div>
                     ) : att.kind === 'audio' ? (
                       <AudioPlayer src={att.url} />
                     ) : (
-                      <a href={att.url} target="_blank" rel="noreferrer" className={`flex items-center gap-3 p-3 rounded-xl border ${isOwn ? 'bg-white/10 border-white/20 text-white' : 'bg-indigo-50 border-indigo-100 text-indigo-700'}`}>
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isOwn ? 'bg-white/20' : 'bg-white'}`}>
+                      <button 
+                        onClick={(e) => handleDownload(e, att)} 
+                        className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border transition-all ${isOwn ? 'bg-white/10 border-white/20 hover:bg-white/20 text-white' : 'bg-indigo-50 border-indigo-100 hover:bg-indigo-100 text-indigo-700 shadow-sm hover:shadow'}`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isOwn ? 'bg-white/20' : 'bg-white shadow-sm'}`}>
                           <FileDown className="h-5 w-5" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-black truncate">{att.filename}</p>
-                          <p className="text-[10px] opacity-70 uppercase font-bold tracking-tighter">Download File</p>
+                          <p className="text-[10px] opacity-70 uppercase font-bold tracking-tighter mt-0.5">Click to Download</p>
                         </div>
-                      </a>
+                        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20">
+                          <Download size={14} className={isOwn ? "text-white" : "text-indigo-600"} />
+                        </div>
+                      </button>
                     )}
                   </div>
                 ))}
