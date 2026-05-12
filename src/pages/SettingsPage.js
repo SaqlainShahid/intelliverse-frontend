@@ -275,12 +275,12 @@ const SettingsPage = () => {
                   ) : (
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-black"
                       style={{ background: `linear-gradient(135deg, ${p(1)}, ${p(0.7)})` }}>
-                      {(user?.profile?.firstName || user?.email || 'U')[0].toUpperCase()}
+                      {(user?.profile?.displayName || user?.profile?.firstName || user?.email || 'U')[0].toUpperCase()}
                     </div>
                   )}
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-gray-900 truncate">
-                      {user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim() : 'My Account'}
+                      {user?.profile?.displayName || (user?.profile?.firstName ? `${user.profile.firstName} ${user.profile.lastName || ''}`.trim() : 'My Account')}
                     </p>
                     <p className="text-[10px] text-gray-400 truncate">{user?.role?.toUpperCase()}</p>
                   </div>

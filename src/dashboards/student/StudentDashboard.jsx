@@ -135,6 +135,19 @@ const StudentDashboard = () => {
     finally { setJoining(false); }
   };
 
+  const handleJoinClub = async (e, clubId) => {
+    e.stopPropagation();
+    try {
+      const res = await api.post(`/clubs/${clubId}/join`);
+      if (res.data.success) {
+        toast.success('Successfully joined the club!');
+        navigate('/clubs');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to join club');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 min-h-[400px]">
@@ -304,15 +317,16 @@ const StudentDashboard = () => {
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Campus Feed</p>
                 </div>
               </div>
-              <a href="/events" className="flex items-center gap-1.5 text-indigo-600 text-[11px] font-bold hover:gap-2.5 transition-all uppercase tracking-wider">
+              <button onClick={() => navigate('/events')} className="flex items-center gap-1.5 text-indigo-600 text-[11px] font-bold hover:gap-2.5 transition-all uppercase tracking-wider">
                 View All <ArrowRight size={13} />
-              </a>
+              </button>
             </div>
 
             {events.length > 0 ? (
               <div className="space-y-3">
                 {events.map(ev => (
                   <div key={ev._id}
+                    onClick={() => navigate(`/events/${ev._id}`)}
                     className="group p-4 rounded-2xl border border-slate-100 bg-slate-50/40 hover:bg-white hover:border-indigo-100 transition-all duration-300 cursor-pointer"
                     style={{ '--tw-shadow': 'none' }}
                     onMouseEnter={e => e.currentTarget.style.boxShadow = '0 8px 24px -6px rgba(79,70,229,0.12)'}
@@ -353,15 +367,16 @@ const StudentDashboard = () => {
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Community Discovery</p>
                 </div>
               </div>
-              <a href="/clubs" className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-bold hover:gap-2.5 transition-all uppercase tracking-wider">
+              <button onClick={() => navigate('/clubs')} className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-bold hover:gap-2.5 transition-all uppercase tracking-wider">
                 Explore <ArrowRight size={13} />
-              </a>
+              </button>
             </div>
 
             {clubs.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {clubs.map(club => (
                   <div key={club._id}
+                    onClick={() => navigate(`/clubs/${club._id}`)}
                     className="p-5 rounded-2xl border border-slate-100 bg-slate-50/40 hover:bg-white hover:border-emerald-100 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
                     onMouseEnter={e => e.currentTarget.style.boxShadow = '0 8px 24px -6px rgba(5,150,105,0.12)'}
                     onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
@@ -369,7 +384,9 @@ const StudentDashboard = () => {
                       <h3 className="font-bold text-slate-800 text-[14px] mb-1 group-hover:text-emerald-700 transition-colors">{club.name}</h3>
                       <p className="text-slate-400 text-[12px] leading-relaxed line-clamp-2">{club.description}</p>
                     </div>
-                    <button className="w-full py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider text-white transition-all hover:opacity-90"
+                    <button 
+                      onClick={(e) => handleJoinClub(e, club._id)}
+                      className="w-full py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider text-white transition-all hover:opacity-90"
                       style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 4px 12px rgba(5,150,105,0.3)' }}>
                       Join Club
                     </button>
@@ -409,7 +426,7 @@ const StudentDashboard = () => {
                 { icon: Briefcase,   title: 'Career Path', desc: 'Expert tips & Job resources', href: '/career',  grad: 'linear-gradient(135deg,#059669,#10b981)', light: '#ecfdf5', accent: '#059669' },
                 { icon: MessageSquare, title: 'Peer-to-Peer', desc: 'Message fellow students', href: '/p2p-chat', grad: 'linear-gradient(135deg,#7c3aed,#a855f7)', light: '#f5f3ff', accent: '#7c3aed' },
               ].map(action => (
-                <a key={action.title} href={action.href}
+                <div key={action.title} onClick={() => navigate(action.href)}
                   className="group relative overflow-hidden rounded-2xl border border-slate-100 p-6 flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
                   style={{ background: action.light }}
                   onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 12px 32px -8px ${action.accent}40`; e.currentTarget.style.borderColor = `${action.accent}30`; }}
@@ -423,7 +440,7 @@ const StudentDashboard = () => {
                   <div className="flex items-center gap-1 mt-3 text-[11px] font-bold transition-all group-hover:gap-2" style={{ color: action.accent }}>
                     Open <ArrowRight size={12} />
                   </div>
-                </a>
+                </div>
               ))}
             </div>
           </div>

@@ -227,7 +227,7 @@ function AppShell() {
                       {user?.profile?.avatar ? (
                         <img src={user.profile.avatar} alt="Profile" className="h-full w-full object-cover" />
                       ) : (
-                        user?.profile?.firstName?.charAt(0)
+                        (user?.profile?.displayName || user?.profile?.firstName || '?').charAt(0).toUpperCase()
                       )}
                    </div>
                 </div>
@@ -345,6 +345,14 @@ function AppShell() {
               }
             />
             <Route
+              path="/events/:eventId"
+              element={
+                <ProtectedRoute>
+                  <EventsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/events/new"
               element={
                 <ProtectedRoute roles={['admin','faculty']}>
@@ -357,6 +365,22 @@ function AppShell() {
               element={
                 <ProtectedRoute>
                   <EventFormPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clubs"
+              element={
+                <ProtectedRoute>
+                  <EventsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clubs/:clubId"
+              element={
+                <ProtectedRoute>
+                  <EventsPage />
                 </ProtectedRoute>
               }
             />

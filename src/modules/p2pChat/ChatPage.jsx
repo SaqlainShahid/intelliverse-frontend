@@ -16,6 +16,7 @@ export default function ChatPage() {
   const { user } = useAuth();
   const [chats, setChats] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
+  const [cachedActiveChat, setCachedActiveChat] = useState(null);
   const [socket, setSocket] = useState(null);
   const [banner, setBanner] = useState(null);
   const [archivedIds, setArchivedIds] = useState(new Set());
@@ -91,7 +92,12 @@ export default function ChatPage() {
     return chats.filter(c => showArchived ? archivedIds.has(c._id) : !archivedIds.has(c._id));
   }, [chats, showArchived, archivedIds]);
 
-  const activeChat = useMemo(() => chats.find(c => c._id === activeChatId) || null, [chats, activeChatId]);
+  const activeChat = useMemo(() => {
+    // Prefer cached chat for instant display
+    if (cachedActiveChat?._id === activeChatId) return cachedActiveChat;
+    // Fall back to lookup in chats array
+    return chats.find(c => c._id === activeChatId) || cachedActiveChat || null;
+  }, [chats, activeChatId, cachedActiveChat]);
 
   const handleArchive = async (chatId) => {
       try {
@@ -313,7 +319,7 @@ export default function ChatPage() {
           <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar py-2">
             <ChatList 
                 chats={displayedChats} 
-                onSelect={(id) => { setActiveChatId(id); navigate(`/chat/${id}`); }} 
+                onSelect={(chat) => { setActiveChatId(chat._id); setCachedActiveChat(chat); navigate(`/chat/${chat._id}`); }} 
                 activeChatId={activeChatId} 
                 socket={socket} 
                 currentUserId={currentUserId}

@@ -5,7 +5,7 @@ import eventsService from '../services/eventsService';
 import EventCard from '../components/EventCard';
 import clubsService from '../services/clubsService';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
@@ -15,6 +15,8 @@ const EventsPage = () => {
   const [activeTab, setActiveTab] = useState('events');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { clubId, eventId } = useParams();
   const [showModal, setShowModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [qrState, setQrState] = useState({ loading: false, code: '', expiresAt: null });
@@ -103,6 +105,26 @@ const EventsPage = () => {
   useEffect(() => {
     fetchPending();
   }, [isCentralApprover]);
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/clubs')) {
+      setActiveTab('clubs');
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (clubId && clubs.length > 0 && !showClubModal) {
+      handleViewClub(clubId);
+    }
+  }, [clubId, clubs, showClubModal]);
+
+  useEffect(() => {
+    if (eventId && events.length > 0 && !showModal) {
+      const evt = events.find(e => e._id === eventId || e.id === eventId);
+      if (evt) handleView(evt);
+      else handleView({ id: eventId });
+    }
+  }, [eventId, events, showModal]);
 
   const handleJoin = async (id) => {
     try {
@@ -666,7 +688,7 @@ const EventsPage = () => {
                       >Reject</button>
                     </>
                   )}
-                  <button onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-xl font-bold bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 transition-all shadow-sm">Close</button>
+                  <button onClick={() => { setShowModal(false); if (eventId) navigate('/events'); }} className="px-5 py-2.5 rounded-xl font-bold bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 transition-all shadow-sm">Close</button>
                 </div>
               </div>
               
@@ -1280,7 +1302,7 @@ const EventsPage = () => {
           <div className="flex flex-col h-full w-full bg-white">
             <div className="px-4 py-3 border-b bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
               <div className="text-lg font-semibold truncate">{selectedClub.name}</div>
-              <button onClick={() => setShowClubModal(false)} className="text-sm px-3 py-2 rounded bg-white/20 hover:bg-white/30">Close</button>
+              <button onClick={() => { setShowClubModal(false); if (clubId) navigate('/clubs'); }} className="text-sm px-3 py-2 rounded bg-white/20 hover:bg-white/30">Close</button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">

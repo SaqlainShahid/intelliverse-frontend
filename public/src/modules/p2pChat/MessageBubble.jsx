@@ -12,6 +12,11 @@ export default function MessageBubble({ message, isOwn, onReply, onReact, onPin,
   };
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(message.content || '');
+  const buildCloudinaryDownloadUrl = (att) => {
+    if (att?.downloadUrl) return att.downloadUrl;
+    if (!att?.url || !att.url.includes('cloudinary.com') || !att.url.includes('/upload/')) return att?.url;
+    return att.url.replace('/upload/', '/upload/fl_attachment/');
+  };
 
   const ReactionsBar = () => {
     const grouped = (message.reactions || []).reduce((acc, r) => {
@@ -102,7 +107,7 @@ export default function MessageBubble({ message, isOwn, onReply, onReact, onPin,
           if (active) setPeaks(norm);
           try {
             if (ctx && ctx.state !== 'closed') await ctx.close();
-          } catch {}
+          } catch { }
           ctx = null;
         } catch {
           const fallback = Array.from({ length: 24 }, (_, i) => 0.35 + 0.25 * Math.sin(i * 0.6));
@@ -113,7 +118,7 @@ export default function MessageBubble({ message, isOwn, onReply, onReact, onPin,
       return () => {
         active = false;
         if (ctx && ctx.state !== 'closed') {
-          try { ctx.close().catch(() => {}); } catch {}
+          try { ctx.close().catch(() => { }); } catch { }
         }
         ctx = null;
       };
@@ -205,53 +210,59 @@ export default function MessageBubble({ message, isOwn, onReply, onReact, onPin,
         {message.isDeleted ? (
           <div className="text-sm opacity-80">Message deleted</div>
         ) : (
-        <>
-        {!!(message.attachments && message.attachments.length) && (
-          <div className="space-y-2">
-            {message.attachments.map((att) => (
-              <div key={att.publicId} className="rounded-lg overflow-hidden">
-                {att.kind === 'image' ? (
-                  <a href={att.url} target="_blank" rel="noreferrer">
-                    <img src={att.url} alt={att.filename} className="max-h-64 max-w-full h-auto rounded-md" />
-                  </a>
-                ) : att.kind === 'video' ? (
-                  <video src={att.url} className="rounded-md max-w-full" controls />
-                ) : att.kind === 'audio' ? (
-                  <AudioPlayer src={att.url} />
-                ) : (
-                  <a href={att.url} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-2 text-sm ${isOwn ? 'text-white' : 'text-indigo-600'}`}>
-                    <FileDown className="h-4 w-4" />
-                    <span className="truncate max-w-[12rem] break-all">{att.filename}</span>
-                  </a>
-                )}
+          <>
+            {!!(message.attachments && message.attachments.length) && (
+              <div className="space-y-2">
+                {message.attachments.map((att) => (
+                  <div key={att.publicId} className="rounded-lg overflow-hidden">
+                    {att.kind === 'image' ? (
+                      <a href={att.url} target="_blank" rel="noreferrer">
+                        <img src={att.url} alt={att.filename} className="max-h-64 max-w-full h-auto rounded-md" />
+                      </a>
+                    ) : att.kind === 'video' ? (
+                      <video src={att.url} className="rounded-md max-w-full" controls />
+                    ) : att.kind === 'audio' ? (
+                      <AudioPlayer src={att.url} />
+                    ) : (
+                      <a
+                        href={buildCloudinaryDownloadUrl(att)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`inline-flex items-center gap-2 text-sm ${isOwn ? 'text-white' : 'text-indigo-600'}`}
+                        download={att.filename || 'download'}
+                      >
+                        <FileDown className="h-4 w-4" />
+                        <span className="truncate max-w-[12rem] break-all">{att.filename}</span>
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {message.type === 'poll' ? (
+              <PollView poll={(message.poll && message.poll.options) ? { options: message.poll.options.map(o => ({ text: o.text, count: (o.votes || []).length })) } : null} />
+            ) : editing ? (
+              <div className="flex items-center gap-2">
+                <input
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="flex-1 bg-white/80 border border-gray-300 rounded px-2 py-1 text-sm text-gray-900"
+                />
+                <button
+                  onClick={() => { onEdit && onEdit(editText); setEditing(false); }}
+                  className="text-xs px-2 py-1 rounded bg-indigo-600 text-white"
+                >Save</button>
+                <button
+                  onClick={() => { setEditText(message.content || ''); setEditing(false); }}
+                  className="text-xs px-2 py-1 rounded border border-gray-300"
+                >Cancel</button>
+              </div>
+            ) : (!!message.content && (
+              <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                {message.content}
               </div>
             ))}
-          </div>
-        )}
-        {message.type === 'poll' ? (
-          <PollView poll={(message.poll && message.poll.options) ? { options: message.poll.options.map(o => ({ text: o.text, count: (o.votes || []).length })) } : null} />
-        ) : editing ? (
-          <div className="flex items-center gap-2">
-            <input
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              className="flex-1 bg-white/80 border border-gray-300 rounded px-2 py-1 text-sm text-gray-900"
-            />
-            <button
-              onClick={() => { onEdit && onEdit(editText); setEditing(false); }}
-              className="text-xs px-2 py-1 rounded bg-indigo-600 text-white"
-            >Save</button>
-            <button
-              onClick={() => { setEditText(message.content || ''); setEditing(false); }}
-              className="text-xs px-2 py-1 rounded border border-gray-300"
-            >Cancel</button>
-          </div>
-        ) : (!!message.content && (
-          <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
-            {message.content}
-          </div>
-        ))}
-        </>
+          </>
         )}
         <ReactionsBar />
         <div className={`mt-1 flex items-center gap-2 ${isOwn ? 'justify-end' : 'justify-start'}`}>

@@ -55,7 +55,7 @@ function ChatItem({ c, accent, activeChatId, presence, typingState, currentUserI
   return (
     <div onContextMenu={(e) => onContextMenu(e, c)} className="relative">
       <button
-        onClick={() => onSelect(c._id)}
+        onClick={() => onSelect(c)}
         className={`w-full px-3 py-2.5 rounded-2xl transition-all duration-200 flex items-center gap-3 text-left border ${
           active ? 'border-violet-300/40 -translate-y-0.5' : 'border-transparent hover:border-violet-100/60 hover:-translate-y-0.5'
         }`}

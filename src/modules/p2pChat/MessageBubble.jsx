@@ -5,32 +5,54 @@ export default function MessageBubble({ message, sender, isOwn, onReply, onReact
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const status = message.status;
   const isSending = status === 'sending';
-  const isFailed  = status === 'failed';
+  const isFailed = status === 'failed';
 
   const StatusIcon = () => {
     if (!isOwn) return null;
-    if (isFailed)   return <span className="text-red-300 text-[10px] font-bold">✕ Failed</span>;
-    if (isSending)  return <span className="text-white/40 text-[10px] animate-pulse">●</span>;
-    if (status === 'seen')      return <CheckCheck className="h-3.5 w-3.5 text-cyan-300" />;
+    if (isFailed) return <span className="text-red-300 text-[10px] font-bold">✕ Failed</span>;
+    if (isSending) return <span className="text-white/40 text-[10px] animate-pulse">●</span>;
+    if (status === 'seen') return <CheckCheck className="h-3.5 w-3.5 text-cyan-300" />;
     if (status === 'delivered') return <CheckCheck className="h-3.5 w-3.5 text-white/70" />;
     return <Check className="h-3.5 w-3.5 text-white/50" />;
   };
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(message.content || '');
 
-  const handleDownload = (e, att) => {
+  const buildCloudinaryDownloadUrl = (att) => {
+    if (att?.downloadUrl) return att.downloadUrl;
+    if (!att?.url || !att.url.includes('cloudinary.com') || !att.url.includes('/upload/')) return att?.url;
+    return att.url.replace('/upload/', '/upload/fl_attachment/');
+  };
+
+  const handleDownload = async (e, att) => {
     e.preventDefault();
     e.stopPropagation();
+    const downloadUrl = buildCloudinaryDownloadUrl(att);
+    const downloadName = att?.filename || 'download';
+    if (!downloadUrl) return;
 
-    const backendBase = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    const proxyUrl = `${backendBase}/api/p2p/download?url=${encodeURIComponent(att.url)}&filename=${encodeURIComponent(att.filename || 'download')}`;
-
-    const a = document.createElement('a');
-    a.href = proxyUrl;
-    a.download = att.filename || 'download';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    try {
+      const response = await fetch(downloadUrl);
+      if (!response.ok) throw new Error('Download failed');
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = downloadName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(objectUrl);
+    } catch {
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = downloadName;
+      a.target = '_blank';
+      a.rel = 'noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   };
 
   const ReactionsBar = () => {
@@ -122,7 +144,7 @@ export default function MessageBubble({ message, sender, isOwn, onReply, onReact
           if (active) setPeaks(norm);
           try {
             if (ctx && ctx.state !== 'closed') await ctx.close();
-          } catch {}
+          } catch { }
           ctx = null;
         } catch {
           const fallback = Array.from({ length: 24 }, (_, i) => 0.35 + 0.25 * Math.sin(i * 0.6));
@@ -133,7 +155,7 @@ export default function MessageBubble({ message, sender, isOwn, onReply, onReact
       return () => {
         active = false;
         if (ctx && ctx.state !== 'closed') {
-          try { ctx.close().catch(() => {}); } catch {}
+          try { ctx.close().catch(() => { }); } catch { }
         }
         ctx = null;
       };
@@ -244,115 +266,114 @@ export default function MessageBubble({ message, sender, isOwn, onReply, onReact
             </div>
           )}
 
-        <div className={`relative px-4 py-3 transition-all duration-200 group-hover/msg:scale-[1.01] ${
-          isOwn
-            ? 'rounded-[20px] rounded-tr-[6px]'
-            : 'rounded-[20px] rounded-tl-[6px]'
-        }`}
-          style={isOwn ? {
-            background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 60%, #8b5cf6 100%)',
-            boxShadow: '0 2px 8px rgba(124,58,237,0.25), 0 8px 24px rgba(99,102,241,0.2), 0 0 0 1px rgba(139,92,246,0.15)',
-          } : {
-            background: 'rgba(255,255,255,0.88)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid rgba(167,139,250,0.18)',
-            boxShadow: '0 2px 8px rgba(139,92,246,0.06), 0 8px 24px rgba(99,102,241,0.08)',
-          }}
-        >
-          <ReplyPreview />
-          
-          {message.isDeleted ? (
-            <div className="text-sm opacity-60 italic font-medium flex items-center gap-2">
-              <Trash2 className="h-3.5 w-3.5" /> This message was deleted
-            </div>
-          ) : (
-          <div className="space-y-2">
-            {!!(message.attachments && message.attachments.length) && (
-              <div className="space-y-2 mb-2">
-                {message.attachments.map((att) => (
-                  <div key={att.publicId} className="rounded-2xl overflow-hidden shadow-sm relative group/att inline-block w-full">
-                    {att.kind === 'image' ? (
-                      <div className="relative">
-                        <a href={att.url} target="_blank" rel="noreferrer" className="block hover:opacity-95 transition-opacity">
-                          <img src={att.url} alt={att.filename} className="max-h-80 max-w-full w-auto object-cover" />
-                        </a>
-                        <button 
-                          onClick={(e) => handleDownload(e, att)}
-                          className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover/att:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer z-10"
-                          title="Download Image"
-                        >
-                          <Download size={16} />
-                        </button>
+          <div className={`relative px-4 py-3 transition-all duration-200 group-hover/msg:scale-[1.01] ${isOwn
+              ? 'rounded-[20px] rounded-tr-[6px]'
+              : 'rounded-[20px] rounded-tl-[6px]'
+            }`}
+            style={isOwn ? {
+              background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 60%, #8b5cf6 100%)',
+              boxShadow: '0 2px 8px rgba(124,58,237,0.25), 0 8px 24px rgba(99,102,241,0.2), 0 0 0 1px rgba(139,92,246,0.15)',
+            } : {
+              background: 'rgba(255,255,255,0.88)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(167,139,250,0.18)',
+              boxShadow: '0 2px 8px rgba(139,92,246,0.06), 0 8px 24px rgba(99,102,241,0.08)',
+            }}
+          >
+            <ReplyPreview />
+
+            {message.isDeleted ? (
+              <div className="text-sm opacity-60 italic font-medium flex items-center gap-2">
+                <Trash2 className="h-3.5 w-3.5" /> This message was deleted
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {!!(message.attachments && message.attachments.length) && (
+                  <div className="space-y-2 mb-2">
+                    {message.attachments.map((att) => (
+                      <div key={att.publicId} className="rounded-2xl overflow-hidden shadow-sm relative group/att inline-block w-full">
+                        {att.kind === 'image' ? (
+                          <div className="relative">
+                            <a href={att.url} target="_blank" rel="noreferrer" className="block hover:opacity-95 transition-opacity">
+                              <img src={att.url} alt={att.filename} className="max-h-80 max-w-full w-auto object-cover" />
+                            </a>
+                            <button
+                              onClick={(e) => handleDownload(e, att)}
+                              className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover/att:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer z-10"
+                              title="Download Image"
+                            >
+                              <Download size={16} />
+                            </button>
+                          </div>
+                        ) : att.kind === 'video' ? (
+                          <div className="relative">
+                            <video src={att.url} className="w-full max-w-md bg-black" controls controlsList="nodownload" />
+                            <button
+                              onClick={(e) => handleDownload(e, att)}
+                              className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover/att:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer z-10"
+                              title="Download Video"
+                            >
+                              <Download size={16} />
+                            </button>
+                          </div>
+                        ) : att.kind === 'audio' ? (
+                          <AudioPlayer src={att.url} />
+                        ) : (
+                          <button
+                            onClick={(e) => handleDownload(e, att)}
+                            className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border transition-all ${isOwn ? 'bg-white/10 border-white/20 hover:bg-white/20 text-white' : 'bg-indigo-50 border-indigo-100 hover:bg-indigo-100 text-indigo-700 shadow-sm hover:shadow'}`}
+                          >
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isOwn ? 'bg-white/20' : 'bg-white shadow-sm'}`}>
+                              <FileDown className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-black truncate">{att.filename}</p>
+                              <p className="text-[10px] opacity-70 uppercase font-bold tracking-tighter mt-0.5">Click to Download</p>
+                            </div>
+                            <div className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20">
+                              <Download size={14} className={isOwn ? "text-white" : "text-indigo-600"} />
+                            </div>
+                          </button>
+                        )}
                       </div>
-                    ) : att.kind === 'video' ? (
-                      <div className="relative">
-                        <video src={att.url} className="w-full max-w-md bg-black" controls controlsList="nodownload" />
-                        <button 
-                          onClick={(e) => handleDownload(e, att)}
-                          className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover/att:opacity-100 transition-opacity backdrop-blur-sm cursor-pointer z-10"
-                          title="Download Video"
-                        >
-                          <Download size={16} />
-                        </button>
-                      </div>
-                    ) : att.kind === 'audio' ? (
-                      <AudioPlayer src={att.url} />
-                    ) : (
-                      <button 
-                        onClick={(e) => handleDownload(e, att)} 
-                        className={`w-full text-left flex items-center gap-3 p-3 rounded-xl border transition-all ${isOwn ? 'bg-white/10 border-white/20 hover:bg-white/20 text-white' : 'bg-indigo-50 border-indigo-100 hover:bg-indigo-100 text-indigo-700 shadow-sm hover:shadow'}`}
-                      >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isOwn ? 'bg-white/20' : 'bg-white shadow-sm'}`}>
-                          <FileDown className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-black truncate">{att.filename}</p>
-                          <p className="text-[10px] opacity-70 uppercase font-bold tracking-tighter mt-0.5">Click to Download</p>
-                        </div>
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20">
-                          <Download size={14} className={isOwn ? "text-white" : "text-indigo-600"} />
-                        </div>
-                      </button>
-                    )}
+                    ))}
+                  </div>
+                )}
+
+                {message.type === 'poll' ? (
+                  <div className="py-1">
+                    <PollView poll={(message.poll && message.poll.options) ? { options: message.poll.options.map(o => ({ text: o.text, count: (o.votes || []).length })) } : null} />
+                  </div>
+                ) : editing ? (
+                  <div className="min-w-[200px] space-y-3 p-1">
+                    <textarea
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      className="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/40"
+                      rows={2}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => { setEditing(false); setEditText(message.content); }} className="text-[10px] font-black uppercase text-white/70 hover:text-white px-2 py-1">Cancel</button>
+                      <button onClick={() => { onEdit?.(editText); setEditing(false); }} className="text-[10px] font-black uppercase bg-white text-indigo-600 px-4 py-1.5 rounded-lg shadow-lg">Save</button>
+                    </div>
+                  </div>
+                ) : (!!message.content && (
+                  <div className={`text-[15px] font-medium leading-relaxed whitespace-pre-wrap break-words ${isOwn ? 'text-white' : 'text-gray-800'}`}>
+                    {message.content}
                   </div>
                 ))}
               </div>
             )}
 
-            {message.type === 'poll' ? (
-              <div className="py-1">
-                <PollView poll={(message.poll && message.poll.options) ? { options: message.poll.options.map(o => ({ text: o.text, count: (o.votes || []).length })) } : null} />
-              </div>
-            ) : editing ? (
-              <div className="min-w-[200px] space-y-3 p-1">
-                <textarea
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  className="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-2 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/40"
-                  rows={2}
-                />
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => { setEditing(false); setEditText(message.content); }} className="text-[10px] font-black uppercase text-white/70 hover:text-white px-2 py-1">Cancel</button>
-                  <button onClick={() => { onEdit?.(editText); setEditing(false); }} className="text-[10px] font-black uppercase bg-white text-indigo-600 px-4 py-1.5 rounded-lg shadow-lg">Save</button>
-                </div>
-              </div>
-            ) : (!!message.content && (
-              <div className={`text-[15px] font-medium leading-relaxed whitespace-pre-wrap break-words ${isOwn ? 'text-white' : 'text-gray-800'}`}>
-                {message.content}
-              </div>
-            ))}
-          </div>
-          )}
-
-          {/* Quick Info & Status */}
-          <div className={`mt-2 flex items-center gap-2 ${isOwn ? 'justify-end' : 'justify-start opacity-70'}`}>
-            <span className={`text-[10px] font-bold tracking-tight ${isOwn ? 'text-white/80' : 'text-gray-500'}`}>{time}</span>
-            {!!message.editedAt && !message.isDeleted && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-white/10 rounded-md">Edited</span>}
-            {isOwn && <StatusIcon />}
+            {/* Quick Info & Status */}
+            <div className={`mt-2 flex items-center gap-2 ${isOwn ? 'justify-end' : 'justify-start opacity-70'}`}>
+              <span className={`text-[10px] font-bold tracking-tight ${isOwn ? 'text-white/80' : 'text-gray-500'}`}>{time}</span>
+              {!!message.editedAt && !message.isDeleted && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-white/10 rounded-md">Edited</span>}
+              {isOwn && <StatusIcon />}
+            </div>
           </div>
         </div>
-      </div>
 
         {/* Action Bar - Hover Visible */}
         <div className={`flex items-center gap-3 mt-1.5 transition-all duration-300 opacity-0 transform translate-y-[-10px] group-hover/msg:opacity-100 group-hover/msg:translate-y-0 ${isOwn ? 'justify-end pr-2' : 'justify-start pl-11'}`}>
@@ -374,7 +395,7 @@ export default function MessageBubble({ message, sender, isOwn, onReply, onReact
                   <Edit3 size={14} />
                 </button>
               )}
-              <button onClick={() => { if(window.confirm('Delete message?')) onDelete?.(); }} className="p-1.5 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600 transition-all active:scale-90">
+              <button onClick={() => { if (window.confirm('Delete message?')) onDelete?.(); }} className="p-1.5 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600 transition-all active:scale-90">
                 <Trash2 size={14} />
               </button>
             </div>

@@ -209,7 +209,7 @@ const HelpDeskPage = () => {
           <div className="hidden sm:block text-right bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/20 shadow-inner">
             <p className="text-sm text-indigo-100 font-medium uppercase tracking-wider mb-1">Welcome back</p>
             <p className="font-bold text-white text-lg">
-              {user?.profile?.firstName} {user?.profile?.lastName}
+              {user?.profile?.displayName || `${user?.profile?.firstName || ''} ${user?.profile?.lastName || ''}`.trim()}
             </p>
           </div>
         </div>
