@@ -22,20 +22,12 @@ export default function MessageBubble({ message, sender, isOwn, onReply, onReact
     e.preventDefault();
     e.stopPropagation();
 
-    let dlUrl = att.url;
-
-    // Add fl_attachment so Cloudinary sends Content-Disposition: attachment
-    // This forces the browser to download instead of previewing in-tab
-    if (dlUrl && dlUrl.includes('cloudinary.com') && dlUrl.includes('/upload/')) {
-      const safeName = (att.filename || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
-      dlUrl = dlUrl.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
-    }
+    const backendBase = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const proxyUrl = `${backendBase}/api/p2p/download?url=${encodeURIComponent(att.url)}&filename=${encodeURIComponent(att.filename || 'download')}`;
 
     const a = document.createElement('a');
-    a.href = dlUrl;
+    a.href = proxyUrl;
     a.download = att.filename || 'download';
-    a.target = '_blank';
-    a.rel = 'noreferrer';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
