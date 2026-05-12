@@ -271,7 +271,7 @@ const ChatRequests = () => {
           <PendingList requests={filterRequests(pendingRequests)} onAccept={handleAccept} onDecline={handleDecline} acceptingId={acceptingId} decliningId={decliningId} />
         )}
         {activeTab === 'accepted' && (
-          <AcceptedList requests={filterRequests(allRequests?.incoming?.filter(r => r.status === 'accepted') || [])} onOpenChat={(userId) => navigate(`/chat/${userId}`)} />
+          <AcceptedList requests={filterRequests(allRequests?.incoming?.filter(r => r.status === 'accepted') || [])} onOpenChat={(userId) => navigate(`/chat/user/${userId}`)} />
         )}
         {activeTab === 'outgoing' && (
           <OutgoingList requests={filterRequests(allRequests?.outgoing?.filter(r => r.status === 'pending') || [])}
