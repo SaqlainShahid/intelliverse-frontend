@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { getTheme } from '../../styles/theme';
 import {
   BookOpen, Plus, ChevronRight, Zap, X, Link as LinkIcon,
-  Search, CalendarDays, Target, MessageSquare,
+  Search, CalendarDays, Target, Trophy, MessageSquare,
   MapPin, Briefcase, LifeBuoy, ArrowRight, Sparkles,
 } from 'lucide-react';
 import logo from '../../logo-intelliverse-transparent.png.png';
