@@ -271,7 +271,7 @@ const ChatRequests = () => {
           <PendingList requests={filterRequests(pendingRequests)} onAccept={handleAccept} onDecline={handleDecline} acceptingId={acceptingId} decliningId={decliningId} />
         )}
         {activeTab === 'accepted' && (
-          <AcceptedList requests={filterRequests(allRequests?.incoming?.filter(r => r.status === 'accepted') || [])} />
+          <AcceptedList requests={filterRequests(allRequests?.incoming?.filter(r => r.status === 'accepted') || [])} onOpenChat={(userId) => navigate(`/chat/${userId}`)} />
         )}
         {activeTab === 'outgoing' && (
           <OutgoingList requests={filterRequests(allRequests?.outgoing?.filter(r => r.status === 'pending') || [])}
@@ -327,19 +327,23 @@ const PendingList = ({ requests, onAccept, onDecline, acceptingId, decliningId }
 };
 
 // ── Accepted ──
-const AcceptedList = ({ requests }) => {
+const AcceptedList = ({ requests, onOpenChat }) => {
   if (!requests.length) return <EmptyState icon={UserCheck} title="No Accepted Connections" sub="Accept requests to start chatting with peers." />;
   return (
     <div className="space-y-3">
-      {requests.map(req => (
-        <RequestCard key={req._id} request={req} accepted>
-          <button className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold shadow-md shadow-violet-200/50 transition-all">
-            <MessageCircle className="w-4 h-4" />
-            Open Chat
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </RequestCard>
-      ))}
+      {requests.map(req => {
+        const sender = req.sender || req;
+        const senderId = sender._id || sender.id;
+        return (
+          <RequestCard key={req._id} request={req} accepted>
+            <button onClick={() => onOpenChat(senderId)} className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-[13px] font-semibold shadow-md shadow-violet-200/50 transition-all">
+              <MessageCircle className="w-4 h-4" />
+              Open Chat
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </RequestCard>
+        );
+      })}
     </div>
   );
 };

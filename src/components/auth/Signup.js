@@ -13,7 +13,7 @@ const Signup = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', role: 'student',
-    profile: { firstName: '', lastName: '', department: '', studentId: '', semester: '', employeeId: '', designation: '', adminCode: '' },
+    profile: { firstName: '', lastName: '', department: '', studentId: '', semester: '' },
     otpCode: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -36,13 +36,8 @@ const Signup = () => {
 
   const buildProfile = (role, profile) => {
     const base = { firstName: profile.firstName.trim(), lastName: profile.lastName.trim(), department: profile.department };
-    if (role === 'student') {
-      const sem = profile.semester !== '' ? parseInt(profile.semester, 10) : undefined;
-      return { ...base, studentId: profile.studentId.trim(), ...(Number.isInteger(sem) ? { semester: sem } : {}) };
-    }
-    if (role === 'faculty') return { ...base, employeeId: profile.employeeId.trim(), ...(profile.designation ? { designation: profile.designation.trim() } : {}) };
-    if (role === 'admin') return { ...base, employeeId: profile.employeeId.trim(), designation: profile.designation.trim(), adminCode: profile.adminCode.trim() };
-    return base;
+    const sem = profile.semester !== '' ? parseInt(profile.semester, 10) : undefined;
+    return { ...base, studentId: profile.studentId.trim(), ...(Number.isInteger(sem) ? { semester: sem } : {}) };
   };
 
   const handleChange = (e) => {
@@ -57,24 +52,22 @@ const Signup = () => {
 
   const setRole = (role) => setFormData(prev => ({
     ...prev, role,
-    profile: { ...prev.profile, ...(role === 'student' ? { employeeId: '', designation: '', adminCode: '' } : { studentId: '', semester: '' }) }
+    profile: { ...prev.profile }
   }));
 
   const validateStep = (s) => {
     if (s === 1) {
       if (!formData.email) { toast.error('Email is required'); return false; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) { toast.error('Enter a valid email'); return false; }
+      if (!formData.email.endsWith('@students.au.edu.pk')) { toast.error('Please use your university email (@students.au.edu.pk)'); return false; }
       return true;
     }
     if (s === 2) {
-      const { firstName, lastName, department, studentId, employeeId, adminCode } = formData.profile;
+      const { firstName, lastName, department, studentId } = formData.profile;
       if (!firstName || !lastName || !department) { toast.error('Please fill all required fields'); return false; }
       if (firstName.trim().length < 3 || lastName.trim().length < 3) { toast.error('Name must be at least 3 characters'); return false; }
       if (!/^[A-Za-z\s]+$/.test(firstName) || !/^[A-Za-z\s]+$/.test(lastName)) { toast.error('Name must contain only letters'); return false; }
-      if (formData.role === 'student' && !studentId) { toast.error('Student ID is required'); return false; }
-      if ((formData.role === 'faculty' || formData.role === 'admin') && !employeeId) { toast.error('Employee ID is required'); return false; }
-      if (formData.role === 'admin' && !adminCode) { toast.error('Admin code is required'); return false; }
-      if (formData.role === 'admin' && adminCode !== 'ADMIN001') { toast.error('Invalid admin code'); return false; }
+      if (!studentId) { toast.error('Student ID is required'); return false; }
       return true;
     }
     if (s === 3) {
@@ -130,7 +123,6 @@ const Signup = () => {
 
   const ROLES = [
     { id: 'student', label: 'Student', Icon: PiStudentFill },
-    { id: 'faculty', label: 'Faculty', Icon: PiChalkboardTeacherFill },
   ];
 
   const RoleBtn = ({ role: r, label, Icon: RIcon }) => {
@@ -211,14 +203,7 @@ const Signup = () => {
                   <p className="text-base text-slate-500">Join the IntelliVerse campus ecosystem</p>
                 </div>
 
-                <div>
-                  <label className="block text-[15px] font-semibold text-slate-700 mb-3">I am a:</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {ROLES.map(r => (
-                      <RoleBtn key={r.id} role={r.id} label={r.label} Icon={r.Icon} />
-                    ))}
-                  </div>
-                </div>
+
 
                 <div>
                   <label htmlFor="email" className="block text-[15px] font-semibold text-slate-700 mb-2">University Email *</label>
@@ -294,48 +279,7 @@ const Signup = () => {
                   </div>
                 )}
 
-                {formData.role === 'faculty' && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[15px] font-semibold text-slate-700 mb-2">Employee ID *</label>
-                      <div className="relative group"><Icon icon={Hash} />
-                        <input name="profile.employeeId" type="text" value={formData.profile.employeeId} onChange={handleChange}
-                          className="glass-input py-4 text-[15px]" placeholder="EMP001" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[15px] font-semibold text-slate-700 mb-2">Designation</label>
-                      <input name="profile.designation" type="text" value={formData.profile.designation} onChange={handleChange}
-                        className="glass-input !pl-4 py-4 text-[15px]" placeholder="Asst. Professor" />
-                    </div>
-                  </div>
-                )}
 
-                {formData.role === 'admin' && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[15px] font-semibold text-slate-700 mb-2">Employee ID *</label>
-                        <div className="relative group"><Icon icon={Hash} />
-                          <input name="profile.employeeId" type="text" value={formData.profile.employeeId} onChange={handleChange}
-                            className="glass-input py-4 text-[15px]" placeholder="ADMIN001" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[15px] font-semibold text-slate-700 mb-2">Designation</label>
-                        <input name="profile.designation" type="text" value={formData.profile.designation} onChange={handleChange}
-                          className="glass-input !pl-4 py-4 text-[15px]" placeholder="System Admin" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[15px] font-semibold text-slate-700 mb-2">Admin Code *</label>
-                      <div className="relative group"><Icon icon={Shield} />
-                        <input name="profile.adminCode" type="password" value={formData.profile.adminCode} onChange={handleChange}
-                          className="glass-input py-4 text-[15px]" placeholder="Enter admin code" />
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setStep(1)} className="glass-btn-secondary py-4 flex items-center gap-1">
