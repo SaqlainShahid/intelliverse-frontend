@@ -114,7 +114,7 @@ const LostItemCard = ({ item, onClaimed, onDeleted, onStatusChanged }) => {
       <div className="relative">
         {item.imageUrl && (
           <img
-            src={`http://localhost:5000${item.imageUrl}`}
+            src={item.imageUrl.startsWith('http') ? item.imageUrl : `http://localhost:5000${item.imageUrl}`}
             alt={item.itemName}
             className="h-48 w-full object-cover bg-gray-100 rounded-t-2xl transform transition-transform duration-300 hover:scale-105"
           />
